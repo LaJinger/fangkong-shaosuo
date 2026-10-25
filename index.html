@@ -1847,6 +1847,22 @@ function buildPrompt(desc) {
     'full character visible with clear margin around it, no shadow on the background, ' +
     'centered composition, no text, no border, no watermark';
 }
+function withRetry(genFn, onRetry) {
+  var attempt = 0;
+  function tryOnce() {
+    attempt++;
+    return genFn().catch(function (e) {
+      var msg = String(e.message || e);
+      var transient = /HTTP (401|402|403|429|5\d\d)|Failed to fetch|NetworkError/i.test(msg);
+      if (attempt <= 2 && transient) {
+        if (onRetry) onRetry(attempt);
+        return new Promise(function (res) { setTimeout(res, 900 * attempt); }).then(tryOnce);
+      }
+      throw e;
+    });
+  }
+  return tryOnce();
+}
 function aiT2I(prompt, cfg) {
   return fetch(cfg.base + '/images/generations', {
     method: 'POST',
@@ -2270,18 +2286,21 @@ function doGenerate() {
   }
   if (cfg.key) {
     status('AI 生成中…（约 10-20 秒）');
+    var retryNote = function (n) { status('⚠️ AI 网关抖动，自动重试中（第 ' + n + ' 次）…'); };
     if (isPhoto) {
-      aiI2I(buildPrompt(desc || 'transform this photo into a chibi radar sentry'), photoData, cfg)
+      withRetry(function () { return aiI2I(buildPrompt(desc || 'transform this photo into a chibi radar sentry'), photoData, cfg); }, retryNote)
         .then(function (img) { finish(img, parseDesc(desc)); })
         .catch(function (e) {
-          status('图生图不可用（' + String(e.message).slice(0, 60) + '）→ 本地磷光风格化');
+          status('✗ 图生图不可用（' + String(e.message).slice(0, 52) + '）已自动重试仍失败 → 先用本地风格化，可稍后再点生成重试');
+          var st = $('crStatus'); st.style.color = 'var(--amber)';
           stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }); });
         });
     } else {
-      aiT2I(buildPrompt(desc), cfg)
+      withRetry(function () { return aiT2I(buildPrompt(desc), cfg); }, retryNote)
         .then(function (img) { finish(img, parseDesc(desc)); })
         .catch(function (e) {
-          status('AI 生图失败（' + String(e.message).slice(0, 60) + '）→ 内置画风');
+          status('✗ AI 生图失败（' + String(e.message).slice(0, 52) + '）已自动重试仍失败 → 先用内置画风，可稍后再点生成重试');
+          var st = $('crStatus'); st.style.color = 'var(--amber)';
           var pc = parseDesc(desc);
           var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
           drawChibi(cv, pc);
