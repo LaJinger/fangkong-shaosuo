@@ -2291,12 +2291,12 @@ function doGenerate() {
   $('btnGenCard').disabled = true;
   var name = (desc.match(/熊猫|橘猫|柴犬|机器人|直升机|小猫|猫|狗|犬|兔/) || ['小哨'])[0];
   var no = 'NO.1024-' + String(10 + Math.floor(Math.random() * 90));
-  function finish(img, parsedCfg) {
+  function finish(img, parsedCfg, note) {
     throughCutout(img, function (finalUrl, faded) {
       hero = { img: finalUrl, name: name, no: no, cfg: parsedCfg || parseDesc(desc), uniCol: '#25402f', fade: faded };
       setHero(hero);
       var left = GEN_CAP - (used + 1);
-      status('生成完成 ✓ 剩余 AI 生图次数 ' + Math.max(0, left) + '（内置画风不限）');
+      status(note || ('生成完成 ✓ 剩余 AI 生图次数 ' + Math.max(0, left) + '（内置画风不限）'));
       try { localStorage.setItem('fs_gen', String(used + 1)); } catch (e) {}
       $('btnGenCard').disabled = false;
     });
@@ -2309,7 +2309,7 @@ function doGenerate() {
         .then(function (img) { finish(img, parseDesc(desc)); })
         .catch(function (e) {
           var warn = '⚠️ 图生图不可用（' + String(e.message).slice(0, 46) + '），已自动重试仍失败 → 本局先用本地风格化；稍后再点「生成」可重试 AI';
-          stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }); status(warn); });
+          stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }, warn); });
         });
     } else {
       withRetry(function () { return aiT2I(buildPrompt(desc), cfg); }, retryNote)
@@ -2319,8 +2319,7 @@ function doGenerate() {
           var pc = parseDesc(desc);
           var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
           drawChibi(cv, pc);
-          finish(cv.toDataURL('image/png'), pc);
-          status(warn);
+          finish(cv.toDataURL('image/png'), pc, warn);
           var st = $('crStatus'); st.style.color = 'var(--amber)';
         });
     }
