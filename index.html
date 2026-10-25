@@ -311,8 +311,8 @@ footer { font-size: 11px; color: var(--dim); padding: 0 14px 16px; max-width: 96
     <div id="crAiCfg" hidden>
       <label>API 地址（OpenAI 兼容）</label>
       <input id="aiBase" value="https://api.openai-next.com/v1">
-      <label>API Key（主办方已内置供试玩；此处可填自己的 Key 覆盖，仅存本机）</label>
-      <input id="aiKey" type="password" placeholder="sk-…">
+      <label>API Key（可选；不填则使用免费公共通道 Pollinations）</label>
+      <input id="aiKey" type="password" placeholder="不填=免费公共通道">
       <label>生图模型</label>
       <input id="aiModel" value="gemini-nano-banana-2.1">
       <p class="muted" style="margin:6px 0 0">不填 Key 也能玩：使用内置画风生成形象。照片模式优先尝试图生图，不支持时自动本地风格化。</p>
@@ -1674,7 +1674,7 @@ requestAnimationFrame(loop);
    赛后请清空此行或换成自己的长期 Key / 代理地址。玩家在本机填写的 Key 优先级更高。 */
 window.GAME_CONFIG = {
   aiBase: 'https://api.openai-next.com/v1',
-  aiKey: 'sk-bxyDylcGiIoPfH8T0bEdDb4a21414555A443A9EaD327E4Da',
+  aiKey: '',
   aiModel: 'gemini-nano-banana-2.1'
 };
 </script>
@@ -1885,6 +1885,20 @@ function withRetry(genFn, onRetry) {
     });
   }
   return tryOnce();
+}
+function pollinationsGen(prompt) {
+  var url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) +
+    '?width=1024&height=1024&nologo=true&model=flux&seed=' + Math.floor(Math.random() * 1000000);
+  return fetch(url).then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.blob();
+  }).then(function (blob) {
+    return new Promise(function (res) {
+      var rd = new FileReader();
+      rd.onload = function () { res(rd.result); };
+      rd.readAsDataURL(blob);
+    });
+  });
 }
 function aiT2I(prompt, cfg) {
   return fetch(cfg.base + '/images/generations', {
@@ -2307,47 +2321,57 @@ function doGenerate() {
       $('btnGenCard').disabled = false;
     });
   }
-  if (cfg.key) {
-    status('AI 生成中…（约 10-20 秒）');
-    var retryNote = function (n) { status('⚠️ AI 网关抖动，自动重试中（第 ' + n + ' 次）…'); };
-    if (isPhoto) {
-      withRetry(function () { return aiI2I(buildPrompt(desc || 'transform this photo into a chibi radar sentry'), photoData, cfg); }, retryNote)
-        .then(function (img) { finish(img, parseDesc(desc)); })
-        .catch(function (e) {
-          var warn = '⚠️ 图生图不可用（' + String(e.message).slice(0, 46) + '），已自动重试仍失败 → 本局先用本地风格化；稍后再点「生成」可重试 AI';
-          stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }, warn); });
-        });
-    } else {
-      withRetry(function () { return aiT2I(buildPrompt(desc), cfg); }, retryNote)
-        .then(function (img) { finish(img, parseDesc(desc)); })
-        .catch(function (e) {
-          var em = String(e.message || '');
-          var warn = /invalid token/i.test(em)
-            ? '⚠️ 生图 Key 已失效或额度耗尽（Invalid token）→ 点上方 ⚙️ 设置更新 Key 可恢复；本局先用内置画风'
-            : '⚠️ AI 生图失败（' + em.slice(0, 46) + '），已自动重试仍失败 → 本局先用内置画风；稍后再点「生成」可重试 AI';
-          var pc = parseDesc(desc);
-          var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
-          drawChibi(cv, pc);
-          finish(cv.toDataURL('image/png'), pc, warn);
-          var st = $('crStatus'); st.style.color = 'var(--amber)';
-        });
-    }
-  } else {
-    status('内置画风生成中…');
+  function builtinFallback() {
+    status('⚠️ AI 通道暂不可用 → 本局先用内置画风；稍后再点「生成」可重试 AI');
     setTimeout(function () {
       if (isPhoto) {
-        stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }); });
+        stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }, '⚠️ AI 通道暂不可用 → 本局为本地风格化照片；稍后再点「生成」可重试 AI'); });
       } else {
         var pc = parseDesc(desc);
         var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
         drawChibi(cv, pc);
-        finish(cv.toDataURL('image/png'), pc);
+        finish(cv.toDataURL('image/png'), pc, '⚠️ AI 通道暂不可用 → 本局为内置画风形象；稍后再点「生成」可重试 AI');
       }
     }, 120);
   }
+  var polliGen = function (d) {
+    status('AI 生成中…（公共通道，约 10-30 秒）');
+    return pollinationsGen(buildPrompt(d));
+  };
+  var retryNote = function (n) { status('⚠️ AI 网关抖动，自动重试中（第 ' + n + ' 次）…'); };
+  if (isPhoto) {
+    if (cfg.key) {
+      status('AI 生成中…（图生图，约 10-20 秒）');
+      withRetry(function () { return aiI2I(buildPrompt(desc || 'a chibi radar sentry'), photoData, cfg); }, retryNote)
+        .then(function (img) { finish(img, parseDesc(desc)); })
+        .catch(function () {
+          status('⚠️ 图生图不可用 → 本局先用本地风格化');
+          stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }, '⚠️ 图生图不可用 → 本局为本地风格化照片；稍后再点「生成」可重试 AI'); });
+        });
+    } else {
+      status('⚠️ 未配置 Key：照片模式仅支持本地风格化');
+      setTimeout(function () {
+        stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }, '⚠️ 未配置 Key：本局为本地风格化照片'); });
+      }, 120);
+    }
+  } else if (cfg.key) {
+    status('AI 生成中…（约 10-20 秒）');
+    withRetry(function () { return aiT2I(buildPrompt(desc), cfg); }, retryNote)
+      .then(function (img) { finish(img, parseDesc(desc)); })
+      .catch(function () {
+        status('⚠️ 配置通道失败 → 切换公共通道…');
+        withRetry(function () { return pollinationsGen(buildPrompt(desc)); }, retryNote)
+          .then(function (img) { finish(img, parseDesc(desc)); })
+          .catch(builtinFallback);
+      });
+  } else {
+    withRetry(function () { return polliGen(desc); }, retryNote)
+      .then(function (img) { finish(img, parseDesc(desc)); })
+      .catch(builtinFallback);
+  }
 }
 
-/* ---------- 事件绑定 ---------- */
+  /* ---------- 事件绑定 ---------- *//* ---------- 事件绑定 ---------- */
 function bind(id, fn) { var el = $(id); if (el) el.addEventListener('click', fn); }
 bind('tabPhoto', function () {
   $('tabPhoto').classList.add('on'); $('tabText').classList.remove('on');
