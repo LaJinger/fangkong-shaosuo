@@ -1,0 +1,2431 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>防空哨所 · 值班终端｜1024 超能 Coding 周末</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #04120c; --panel: #061a11; --line: #0e3524; --line2: #1d5c3c;
+  --pri: #5af0aa; --dim: #3f9c6e; --pale: #cfe8d8; --amber: #e6a817; --red: #ff6161;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--pri); }
+body {
+  font-family: "Courier New", ui-monospace, "Microsoft YaHei", monospace;
+  font-size: 14px; line-height: 1.5; min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+}
+header {
+  width: 100%; max-width: 960px; display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px 6px; flex-wrap: wrap;
+}
+header h1 { font-size: 16px; margin: 0; letter-spacing: 2px; font-weight: 400; color: var(--pri); }
+header .sub { font-size: 11px; color: var(--dim); flex: 1; }
+.hbtn {
+  appearance: none; background: var(--panel); border: 1px solid var(--line2); color: var(--pri);
+  font-family: inherit; font-size: 12.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+}
+.hbtn:active { background: var(--line); }
+.hud {
+  width: 100%; max-width: 960px; display: flex; gap: 8px 18px; flex-wrap: wrap;
+  padding: 2px 14px 8px; font-size: 13px; color: var(--dim);
+}
+.hud b { color: var(--pri); font-weight: 400; }
+.hud .hearts { color: var(--pri); letter-spacing: 2px; }
+.hud .hearts.lost { color: var(--red); }
+main {
+  width: 100%; max-width: 960px; display: flex; gap: 14px; padding: 0 14px 18px;
+  align-items: flex-start; flex-wrap: wrap;
+}
+#scopeWrap { flex: 1 1 460px; min-width: 280px; position: relative; }
+#scope { width: 100%; display: block; border-radius: 50% / 50%; }
+#legend {
+  font-size: 11.5px; color: var(--dim); text-align: center; margin-top: 6px; letter-spacing: .5px;
+}
+#legend em { font-style: normal; }
+#legend .g { color: var(--pri); } #legend .w { color: var(--pale); }
+#legend .a { color: var(--amber); }
+#side { flex: 1 1 280px; min-width: 260px; display: flex; flex-direction: column; gap: 10px; }
+.card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+}
+.card h2 {
+  margin: 0 0 8px; font-size: 12.5px; font-weight: 400; letter-spacing: 2px; color: var(--dim);
+}
+#log { margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
+#log li { padding: 2px 0; color: var(--pale); opacity: .9; }
+#log li.bad { color: var(--amber); } #log li.crit { color: var(--red); }
+#log li.good { color: var(--pri); }
+#idcard .row { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+#idcard .row:last-of-type { border-bottom: none; }
+#idcard .k { color: var(--dim); } #idcard .v { color: var(--pale); text-align: right; }
+#idcard .v.alert { color: var(--amber); }
+#acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+#acts button {
+  appearance: none; font-family: inherit; font-size: 14px; padding: 12px 6px; border-radius: 8px;
+  background: var(--line); border: 1px solid var(--line2); color: var(--pri); cursor: pointer;
+  min-height: 44px;
+}
+#acts button:active { background: var(--line2); }
+#acts .b-escort { color: var(--pri); } #acts .b-release { color: var(--pale); }
+#acts .b-fire { border-color: #6e2f2f; color: var(--red); }
+#acts .b-image { border-color: var(--line2); color: var(--amber); }
+#idcard .tip { font-size: 11.5px; color: var(--dim); margin-top: 8px; }
+/* overlays */
+.overlay {
+  position: fixed; inset: 0; background: rgba(2,10,6,.86); display: flex;
+  align-items: center; justify-content: center; z-index: 20; padding: 18px;
+}
+.overlay[hidden] { display: none; }
+.sheet {
+  width: 100%; max-width: 520px; background: var(--panel); border: 1px solid var(--line2);
+  border-radius: 12px; padding: 20px 22px; max-height: 92vh; overflow: auto;
+}
+.sheet h2 { margin: 0 0 12px; font-size: 16px; font-weight: 400; letter-spacing: 3px; color: var(--pri); }
+.sheet p, .sheet li { font-size: 13.5px; color: var(--pale); }
+.sheet ol { margin: 8px 0; padding-left: 20px; }
+.sheet .muted { color: var(--dim); font-size: 12px; }
+.bigbtn {
+  display: block; width: 100%; margin-top: 14px; appearance: none; font-family: inherit;
+  font-size: 16px; letter-spacing: 4px; padding: 13px; border-radius: 8px; cursor: pointer;
+  background: var(--line); border: 1px solid var(--pri); color: var(--pri);
+}
+.bigbtn:active { background: var(--line2); }
+#codexList { display: grid; grid-template-columns: 1fr; gap: 8px; }
+#codexList .cx { border: 1px dashed var(--line2); border-radius: 8px; padding: 8px 10px; }
+#codexList .cx b { color: var(--pri); font-weight: 400; }
+#codexList .cx p { margin: 4px 0 0; font-size: 12px; color: var(--dim); }
+#codexList .cx.lock { opacity: .45; }
+/* report grid */
+#ovHeroWrap { text-align: center; margin: 4px 0 10px; }
+#ovHeroImg { width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--pri); box-shadow: 0 0 16px rgba(90,240,170,.35); background: var(--line); }
+#ovHeroTag { font-size: 12px; color: var(--dim); margin-top: 4px; letter-spacing: 1px; }
+.cx-grouplabel { font-size: 11.5px; color: var(--amber); letter-spacing: 2px; margin: 12px 0 4px; }
+.cx { display: flex; gap: 10px; align-items: center; }
+.cx-icon { width: 78px; height: 44px; flex: none; image-rendering: pixelated; }
+.cx-tx { flex: 1; min-width: 0; }
+#ovRecord { margin: 8px 0 2px; padding: 8px 12px; border-radius: 10px;
+  background: linear-gradient(90deg, rgba(230,168,23,.20), rgba(90,240,170,.14));
+  color: #ffd97a; font-size: 14.5px; text-align: center; }
+#ovRecord b { color: #ffd97a; }
+.ovc { position: absolute; top: -14px; width: 8px; height: 13px; border-radius: 2px;
+  opacity: .95; animation: ovcFall 1.9s linear forwards; pointer-events: none; }
+@keyframes ovcFall { to { transform: translateY(460px) rotate(540deg); opacity: 0; } }
+.lb-title { font-size: 12.5px; color: var(--dim); letter-spacing: 2px; margin: 12px 0 4px; }
+.lb-row { display: flex; gap: 10px; font-size: 12.5px; color: var(--pale); padding: 3px 6px;
+  border-bottom: 1px dashed var(--line); }
+.lb-row.new { background: rgba(230,168,23,.14); border-radius: 6px; }
+.lb-row .lbi { width: 26px; color: var(--dim); }
+.lb-row .lbs { width: 58px; color: var(--pri); }
+.lb-row .lbt { margin-left: auto; color: var(--dim); }
+.sheet { position: relative; }
+#repGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 12px 0; text-align: center; }
+#repGrid .rg { border: 1px solid var(--line2); border-radius: 8px; padding: 8px 2px; }
+#repGrid .rg .n { font-size: 20px; color: var(--pri); }
+#repGrid .rg .t { font-size: 11px; color: var(--dim); }
+#repGrid .rg.crit .n { color: var(--red); }
+/* imaging quiz */
+#imgBox { text-align: center; }
+#imgCv { width: 180px; height: 180px; image-rendering: pixelated; border: 1px solid var(--line2); border-radius: 8px; margin: 8px auto; display: block; }
+#imgChoices { margin-top: 10px; }
+.qz-label { font-size: 11.5px; color: var(--dim); margin: 8px 0 4px; letter-spacing: 1px; }
+.qz-label.q-threat { color: #ff9d9a; }
+.qz-label.q-civ { color: var(--pale); }
+.qz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#imgChoices button.q-threat { border-color: #6e2f2f; color: #ffb3b0; }
+#imgChoices button.q-civ { border-color: var(--line2); color: var(--pale); }
+#imgChoices button {
+  appearance: none; font-family: inherit; font-size: 13.5px; padding: 11px 4px; min-height: 44px;
+  background: var(--line); border: 1px solid var(--line2); color: var(--pale); border-radius: 8px; cursor: pointer;
+}
+footer { font-size: 11px; color: var(--dim); padding: 0 14px 16px; max-width: 960px; }
+#hScore { display: inline-block; }
+#ovXp { margin-top: 12px; border: 1px solid var(--line2); border-left: 3px solid var(--amber);
+  border-radius: 10px; padding: 10px 12px; background: var(--panel); }
+.xp-head { display: flex; gap: 8px; align-items: baseline; margin-bottom: 6px; }
+.xp-head .xp-ico { font-size: 16px; }
+.xp-head b { color: var(--amber); font-size: 13.5px; letter-spacing: 1px; }
+.xp-no { margin-left: auto; font-size: 11px; color: var(--dim); }
+#xpBody div { font-size: 12.5px; color: var(--pale); padding: 2px 0 2px 14px; position: relative; line-height: 1.55; }
+#xpBody div::before { content: '▸'; position: absolute; left: 0; color: var(--dim); }
+.xp-tip { margin-top: 7px; font-size: 12px; color: var(--pri); border-top: 1px dashed var(--line); padding-top: 6px; }
+@keyframes fxScoreUp { 25% { color: var(--pri); transform: scale(1.4); } }
+@keyframes fxScoreDown { 20% { color: var(--red); transform: translateX(3px) scale(1.3); } 45% { transform: translateX(-3px); } 70% { transform: translateX(2px); } }
+#hScore.pulse-up { animation: fxScoreUp .55s ease; }
+#hScore.pulse-down { animation: fxScoreDown .5s ease; }
+@media (max-width: 700px) {
+  main { flex-direction: column; }
+  #scopeWrap { width: 100%; }
+  #idcard { position: sticky; top: 6px; z-index: 10; box-shadow: 0 0 0 3px var(--bg); }
+}
+/* ===== 哨兵登记处 + 全息闪卡 ===== */
+.creator { width: 100%; max-width: 440px; }
+.cr-tabs { display: flex; gap: 8px; margin: 10px 0; }
+.cr-tabs .hbtn { flex: 1; min-height: 42px; }
+.cr-tabs .hbtn.on { border-color: var(--pri); color: var(--pri); }
+#crDesc { width: 100%; background: var(--line); border: 1px solid var(--line2); color: var(--pale);
+  font-family: inherit; font-size: 16px; padding: 10px; border-radius: 8px; resize: vertical; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chips button { appearance: none; font-family: inherit; font-size: 12.5px; padding: 5px 10px;
+  border-radius: 999px; background: var(--line); border: 1px solid var(--line2); color: var(--dim); cursor: pointer; }
+.dropzone { display: block; text-align: center; padding: 22px 12px; border: 1.5px dashed var(--line2);
+  border-radius: 10px; color: var(--dim); font-size: 13.5px; cursor: pointer; }
+.cr-photo-prev { margin-top: 8px; text-align: center; }
+.cr-photo-prev img { max-width: 132px; border-radius: 10px; border: 1px solid var(--line2); }
+.cr-ai-row { display: flex; align-items: center; gap: 10px; margin: 12px 0 4px; }
+#crAiCfg { border: 1px dashed var(--line2); border-radius: 8px; padding: 10px; margin-top: 8px; }
+#crAiCfg label { display: block; font-size: 12px; color: var(--dim); margin: 6px 0 2px; }
+#crAiCfg input { width: 100%; background: var(--line); border: 1px solid var(--line2); color: var(--pale);
+  font-size: 13px; padding: 7px 9px; border-radius: 6px; }
+.cr-crop-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap; }
+.cr-crop-row input[type="range"] { flex: 1; min-width: 90px; accent-color: var(--pri); }
+.cr-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+.cr-actions .bigbtn { margin-top: 0; flex: 1; min-width: 150px; }
+/* 全息卡舞台 */
+#holoStage { margin-top: 14px; display: flex; flex-direction: column; align-items: center; }
+#holoStage[hidden] { display: none; }
+#holoTilt { width: min(78vw, 300px); aspect-ratio: 3 / 4; perspective: 700px; touch-action: none; cursor: grab; }
+#holoCard { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+  transition: transform .12s linear; will-change: transform; }
+#holoCard.flipped { transition: transform .5s cubic-bezier(.2,.7,.25,1); }
+.hface { position: absolute; inset: 0; border-radius: 14px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; transform-style: preserve-3d;
+  border: 2px solid var(--line2); background: #04120c;
+  box-shadow: 0 12px 34px rgba(0,0,0,.55), 0 0 22px rgba(90,240,170,.14) inset; }
+.hface.hback { transform: rotateY(180deg); }
+.hlayer { position: absolute; inset: 0; border-radius: 12px; overflow: hidden; }
+.hlayer canvas, .hlayer img { width: 100%; height: 100%; display: block; }
+.hl-bg { will-change: transform; }
+.hl-sub { will-change: transform; }
+.hl-foil { mix-blend-mode: screen; pointer-events: none; will-change: transform; }
+.hl-text { pointer-events: none; will-change: transform; }
+.htext { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 12px;
+  background: linear-gradient(transparent, rgba(2,10,6,.88)); font-family: "Courier New", monospace; }
+.htext .cname { font-size: 17px; color: var(--pri); letter-spacing: 2px; }
+.htext .cno { font-size: 11px; color: var(--dim); margin-top: 2px; }
+.htext .crank { font-size: 11px; color: var(--amber); margin-top: 2px; }
+.hback .htext { background: rgba(2,10,6,.72); }
+.hback .htext .bttl { font-size: 13px; color: var(--pri); letter-spacing: 3px; margin-bottom: 4px; }
+.hback .htext ol { margin: 0; padding-left: 18px; font-size: 11.5px; color: var(--pale); line-height: 1.8; }
+#crStatus { margin-top: 8px; font-size: 12.5px; min-height: 18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>防空哨所</h1>
+  <span class="sub">值班终端 v0.1 · 值班员：小哨 · 1024 超能 Coding 周末参赛原型</span>
+  <button class="hbtn" id="btnHero" type="button">换哨兵</button>
+  <button class="hbtn" id="btnCodex" type="button">图鉴</button>
+  <button class="hbtn" id="btnMute" type="button" aria-pressed="false">声音:开</button>
+</header>
+
+<div class="hud">
+  <span>波次 <b id="hWave">—</b></span>
+  <span>阶段 <b id="hPhase">待命</b></span>
+  <span>剩余 <b id="hTime">--</b>s</span>
+  <span>得分 <b id="hScore">0</b></span>
+  <span>哨所 <b class="hearts" id="hLives">♥♥♥</b></span>
+</div>
+
+<main>
+  <div id="scopeWrap">
+    <canvas id="scope" height="540" aria-label="雷达PPI屏：点光点查看三线索并处置"></canvas>
+    <div id="legend">识别斑：<em class="g">绿=我军</em> · <em class="w">白=有广播（民航/注册无人机）</em> · <em class="a">琥珀=校验失败</em> · 无斑=未应答/黑飞</div>
+  </div>
+  <div id="side">
+    <div class="card" id="idcard" hidden>
+      <h2 id="idTitle">目标识别</h2>
+      <div class="row"><span class="k">回波强度</span><span class="v" id="fRcs">—</span></div>
+      <div class="row"><span class="k">运动特征</span><span class="v" id="fMove">—</span></div>
+      <div class="row"><span class="k" id="fIffK">应答码</span><span class="v" id="fIff">—</span></div>
+      <div class="row" id="rowImg" hidden><span class="k">成像结论</span><span class="v" id="fImg" style="color:var(--amber)">—</span></div>
+      <div id="acts">
+        <button type="button" class="b-release" data-act="release">放行（民航）<span style="opacity:.5"> 1</span></button>
+        <button type="button" class="b-escort" data-act="escort">引导（友军）<span style="opacity:.5"> 2</span></button>
+        <button type="button" class="b-fire" data-act="fire">拦截（敌机）<span style="opacity:.5"> 3</span></button>
+        <button type="button" class="b-image" data-act="image">上报成像<span style="opacity:.5"> 4</span></button>
+      </div>
+      <p class="tip">误伤民航＝重大事故，直接结束值班。</p>
+    </div>
+    <div class="card" id="logcard">
+      <h2>值班日志</h2>
+      <ul id="log" aria-live="polite"></ul>
+    </div>
+  </div>
+</main>
+
+<footer>原型说明：目标运动/回波强度/应答斑为三类真实线索的简化呈现；成像识别致敬 ISAR 逆合成孔径雷达（距离向×多普勒向合成二维像），图为示意简化版。</footer>
+
+<!-- 开场：值班手册 -->
+<div class="overlay" id="ovIntro" hidden>
+  <div class="sheet">
+    <h2>值班手册</h2>
+    <p>你是哨所雷达兵「小哨」。屏上每个光点都要在飞进内圈前分清身份：</p>
+    <ol>
+      <li><b style="color:var(--pri)">点光点</b> → 看三条线索：回波强度、运动特征、应答斑</li>
+      <li>按身份处置：<b style="color:var(--pale)">白斑民航→放行</b> · <b style="color:var(--pri)">绿斑友军→引导</b> · <b>无斑/琥珀→查！多半要拦</b></li>
+      <li>敌机飞进内圈扣1点哨所结构；<b style="color:var(--red)">误伤民航直接结束值班</b></li>
+      <li>私人无人机（第3波起）：白斑=已注册合规→放行；原地悬停无广播=黑飞→拦截反制（放任会被罚）</li>
+      <li>旋翼目标（第6波起）：光点一闪一闪＝直升机。白斑民用→放行；无斑低速逼近＝武装→拦截</li>
+      <li>拿不准就点「上报成像」——合成雷达二维像，对照机型认出它（成像期间目标还在飞）</li>
+    </ol>
+    <p class="muted">快捷键 1/2/3/4 处置 · R 重开 · 手机直接点按</p>
+    <button class="bigbtn" id="btnStart" type="button">开 始 值 班</button>
+  </div>
+</div>
+
+<!-- 哨兵登记处 -->
+<div class="overlay" id="ovCreator">
+  <div class="sheet creator">
+    <h2>哨兵登记处</h2>
+    <p class="muted" style="margin:0 0 4px">上传一张照片，或用一句话描述——生成你的专属哨兵全息卡，带着 TA 上岗。</p>
+    <div class="cr-tabs">
+      <button class="hbtn on" id="tabPhoto" type="button">📷 上传照片</button>
+      <button class="hbtn" id="tabText" type="button">✍️ 文字描述</button>
+    </div>
+    <div id="crPhotoPane">
+      <label class="dropzone">📷 点击选择照片（会变成哨兵形象）<input type="file" id="crFile" accept="image/*" hidden></label>
+      <div id="crPhotoPrev" class="cr-photo-prev" hidden></div>
+    </div>
+    <div id="crTextPane" hidden>
+      <textarea id="crDesc" rows="2" placeholder="例：一只橘色的圆脸猫，戴渔夫帽，爱吃罐头"></textarea>
+      <div class="chips" id="crChips">
+        <button type="button">橘猫</button><button type="button">柴犬</button><button type="button">兔子</button>
+        <button type="button">熊猫</button><button type="button">机器人</button><button type="button">小猫戴渔夫帽</button>
+      </div>
+    </div>
+    <div class="cr-ai-row">
+      <button class="hbtn" id="btnAiCfg" type="button">⚙️ AI 生图设置</button>
+      <span class="muted" id="aiState">检测中…</span>
+    </div>
+    <div id="crAiCfg" hidden>
+      <label>API 地址（OpenAI 兼容）</label>
+      <input id="aiBase" value="https://api.openai-next.com/v1">
+      <label>API Key（主办方已内置供试玩；此处可填自己的 Key 覆盖，仅存本机）</label>
+      <input id="aiKey" type="password" placeholder="sk-…">
+      <label>生图模型</label>
+      <input id="aiModel" value="gemini-nano-banana-2.1">
+      <p class="muted" style="margin:6px 0 0">不填 Key 也能玩：使用内置画风生成形象。照片模式优先尝试图生图，不支持时自动本地风格化。</p>
+    </div>
+    <button class="bigbtn" id="btnGenCard" type="button" style="margin-top:12px">生成全息哨兵卡</button>
+    <div id="crStatus" role="status"></div>
+    <div id="holoStage" hidden>
+      <div id="holoTilt">
+        <div id="holoCard">
+          <div class="hface hfront">
+            <div class="hlayer hl-bg"><canvas id="cardBg" width="300" height="400"></canvas></div>
+            <div class="hlayer hl-sub"><canvas id="cardSub" width="300" height="400"></canvas></div>
+            <div class="hlayer hl-foil"><canvas id="cardFoil" width="150" height="200"></canvas></div>
+            <div class="hlayer hl-text"><div class="htext">
+              <div class="cname" id="cardName">小哨</div>
+              <div class="cno" id="cardNo">NO.1024-77</div>
+              <div class="crank">雷达哨兵 · 列兵</div>
+            </div></div>
+          </div>
+          <div class="hface hback">
+            <canvas id="cardBack" width="300" height="400" style="width:100%;height:100%"></canvas>
+            <div class="htext"><div class="bttl">值班守则</div>
+              <ol><li>先看三线索，再按身份处置</li><li>白斑是朋友，无斑要查证</li><li>误伤民航＝事故</li><li>说不知道，不丢人</li></ol>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cr-crop-row" id="cropRow" hidden>
+        <button class="hbtn" id="btnCropMode" type="button">✂️ 调整头像区域</button>
+        <div id="crZoomWrap" hidden style="display:flex;align-items:center;gap:6px;flex:1;min-width:150px">
+          <span class="muted" style="font-size:11px">缩放</span>
+          <input type="range" id="crZoom" min="1" max="2.6" step="0.05" value="1">
+          <button class="hbtn" id="btnCropDone" type="button">完成</button>
+        </div>
+      </div>
+      <p class="muted" id="holoHint" style="margin-top:8px">拖动转视角 · 点卡片翻面 · 镭射随角度流动</p>
+    </div>
+    <div class="cr-actions">
+      <button class="hbtn" id="btnSkip" type="button">跳过，用默认小哨</button>
+      <button class="bigbtn" id="btnOnDuty" type="button" hidden>带 TA 上岗</button>
+    </div>
+  </div>
+</div>
+
+<!-- 波次战报 -->
+<div class="overlay" id="ovWave" hidden>
+  <div class="sheet">
+    <h2 id="wvTitle">第 1 波结束</h2>
+    <p id="wvBody" style="margin:0"></p>
+    <button class="bigbtn" id="btnNextWave" type="button">继续值班</button>
+  </div>
+</div>
+
+<!-- 值班结束 -->
+<div class="overlay" id="ovOver" hidden>
+  <div class="sheet">
+    <h2 id="ovTitle">值班结束</h2>
+    <div id="ovHeroWrap">
+      <img id="ovHeroImg" alt="哨兵头像">
+      <div id="ovHeroTag"></div>
+    </div>
+    <p id="ovWhy" class="muted"></p>
+    <div id="ovRecord" hidden></div>
+    <div id="repGrid"></div>
+    <p id="ovRank" style="font-size:15px"></p>
+    <div id="ovLb"></div>
+    <div id="ovXp">
+      <div class="xp-head"><span class="xp-ico" id="xpIco">📡</span><b id="xpTitle">经验卡</b><span class="xp-no" id="xpNo"></span></div>
+      <div id="xpBody"></div>
+      <div class="xp-tip" id="xpTip"></div>
+    </div>
+    <button class="bigbtn" id="btnRestart" type="button">再 来 一 局（R）</button>
+  </div>
+</div>
+
+<!-- 图鉴 -->
+<div class="overlay" id="ovCodex" hidden>
+  <div class="sheet">
+    <h2>机型图鉴 · 哨兵笔记</h2>
+    <div id="codexList"></div>
+    <button class="bigbtn" id="btnCodexClose" type="button">返 回 值 班</button>
+  </div>
+</div>
+
+<!-- 成像识别 -->
+<div class="overlay" id="ovImage" hidden>
+  <div class="sheet" id="imgBox">
+    <h2>ISAR 成像识别</h2>
+    <p class="muted" id="imgStat">波束凝视中，二维像合成里……目标仍在逼近！</p>
+    <canvas id="imgCv" width="90" height="90" aria-label="目标雷达二维像"></canvas>
+    <div id="imgChoices"></div>
+    <p class="muted" style="margin-top:10px">ISAR 原理：目标运动 → 距离向(带宽) × 多普勒向(速度差) → 合成二维像。亮斑＝强散射中心（机头/翼尖/发动机）。示意简化版。</p>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+var $ = function (id) { return document.getElementById(id); };
+var clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+var rand = function (a, b) { return a + Math.random() * (b - a); };
+var TAU = Math.PI * 2;
+
+/* ================= 音效 ================= */
+var beeper = {
+  ctx: null, on: true,
+  ensure: function () {
+    if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { this.ctx = null; } }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  tone: function (f, d, type, vol, delay) {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    var t0 = this.ctx.currentTime + (delay || 0);
+    var o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(vol || 0.08, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + d);
+    o.connect(g); g.connect(this.ctx.destination); o.start(t0); o.stop(t0 + d + 0.03);
+  },
+  noise: function (d, vol) {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    var n = Math.floor(this.ctx.sampleRate * d), buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+    var ch = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var src = this.ctx.createBufferSource(), g = this.ctx.createGain();
+    src.buffer = buf; g.gain.value = vol || 0.15;
+    src.connect(g); g.connect(this.ctx.destination); src.start();
+  },
+  pick: function () { this.tone(700, 0.06, 'sine', 0.06); },
+  alarm: function () { this.tone(880, 0.1, 'square', 0.05); this.tone(660, 0.12, 'square', 0.05, 0.12); },
+  boom: function () { this.noise(0.35, 0.18); this.tone(90, 0.3, 'sawtooth', 0.1); },
+  bad: function () { this.tone(200, 0.18, 'square', 0.08); this.tone(150, 0.22, 'square', 0.08, 0.14); },
+  good: function () { this.tone(620, 0.07, 'sine', 0.07); this.tone(930, 0.09, 'sine', 0.06, 0.06); },
+  wave: function () { this.tone(520, 0.08, 'triangle', 0.07); this.tone(780, 0.1, 'triangle', 0.07, 0.09); this.tone(1040, 0.12, 'triangle', 0.07, 0.2); },
+  over: function () { this.tone(440, 0.16, 'sine', 0.09); this.tone(330, 0.18, 'sine', 0.09, 0.16); this.tone(220, 0.3, 'sine', 0.09, 0.34); }
+};
+
+/* ================= 机型定义 ================= */
+var TYPES = {
+  airliner: { name: '民航客机', side: 'civil', rcs: '大', rcsN: 1, spd: [0.085, 0.105], iff: 'civil', spot: 'white', blip: 8.5,
+    hint: '大回波 · 平稳航线 · 白色应答斑',
+    sci: '民航都装应答机，ADS-B 还会实时广播身份——你头顶的大多数光点其实是它。' },
+  transport: { name: '军用运输机', side: 'friend', rcs: '大', rcsN: 1, spd: [0.10, 0.12], iff: 'friend', spot: 'green', blip: 8.5,
+    hint: '大回波 · 绿色我方应答斑',
+    sci: '应答机收到询问就回码自报家门——这就是敌我识别（IFF）的全部原理。' },
+  fighter: { name: '敌方歼击机', side: 'enemy', rcs: '中', rcsN: 0.62, spd: [0.105, 0.125], iff: 'none', spot: 'none', blip: 6.5,
+    hint: '中回波 · 快而直 · 无应答',
+    sci: '不开应答机的隙行者。真实雷达兵先看速度和航向：快而直、直奔要地，先当敌情处理。' },
+  uav: { name: '敌方无人机', side: 'enemy', rcs: '小', rcsN: 0.38, spd: [0.05, 0.065], iff: 'none', spot: 'none', blip: 4.5, jitter: true,
+    hint: '小回波 · 慢而抖 · 无应答',
+    sci: '「低慢小」目标最难抓——小型无人机的回波只比鸟群大一点，靠滤杂波和持续跟踪。' },
+  uav_reg: { name: '私人无人机（已注册）', side: 'reg', rcs: '小', rcsN: 0.38, spd: [0.012, 0.02], iff: 'reg', spot: 'white', blip: 4.5, jitter: true, hover: true,
+    hint: '小回波 · 原地悬停 · 白色识别斑',
+    sci: '按《无人驾驶航空器飞行管理暂行条例》，无人机须实名登记、飞行时广播远程识别码——白斑就是它的电子身份证。合规飞行受法律保护。', imgAs: 'drone' },
+  uav_dark: { name: '黑飞无人机（未注册）', side: 'dark', rcs: '小', rcsN: 0.38, spd: [0.012, 0.02], iff: 'none', spot: 'none', blip: 4.5, jitter: true, hover: true, dwell: 11,
+    hint: '小回波 · 原地悬停 · 无识别广播',
+    sci: '无注册、不广播、闯入管制空域＝黑飞：可依法反制迫降，操作人面临罚款乃至拘留。买无人机第一件事：上民航局 UOM 平台实名登记。', imgAs: 'drone' },
+  heli_civ: { name: '民用直升机', side: 'civil', rcs: '中', rcsN: 0.6, spd: [0.02, 0.032], iff: 'civil', spot: 'white', blip: 6.5, jitter: true, hover: true, dwell: 16, pulse: true,
+    hint: '中回波 · 旋翼脉动 · 白色识别斑',
+    sci: '警航、救护、电力巡线都在用直升机。旋翼转动会让雷达回波周期性起伏——屏上一闪一闪的光点就是旋翼机的"胎记"。', imgAs: 'heli' },
+  heli_mil: { name: '武装直升机', side: 'enemy', rcs: '中', rcsN: 0.66, spd: [0.075, 0.09], iff: 'none', spot: 'none', blip: 6.5, pulse: true,
+    hint: '中回波 · 旋翼脉动 · 无应答 · 低速逼近',
+    sci: '贴地低速突防是武装直升机的看家本领。旋翼脉动+无应答+慢速逼近=高危目标，果断拦截。', imgAs: 'heli' },
+  disguised: { name: '伪装目标', side: 'enemy', rcs: '中', rcsN: 0.66, spd: [0.10, 0.12], iff: 'fault', spot: 'amber', blip: 6.5,
+    hint: '琥珀闪烁 · 应答码校验失败',
+    sci: '应答码对不上时，身份存疑。成像识别（ISAR）就是为这种时刻准备的。', imgAs: 'fighter' },
+  faulty: { name: '应答故障民航', side: 'civil', rcs: '大', rcsN: 1, spd: [0.085, 0.10], iff: 'fault', spot: 'amber', blip: 8.5,
+    hint: '琥珀闪烁 · 应答码校验失败',
+    sci: '应答机也会坏。校验失败≠敌机——先成像再处置，别凭火气开火。', imgAs: 'airliner' }
+};
+var QUIZ = [
+  { key: 'fighter', label: '敌方歼击机' },
+  { key: 'uav', label: '敌方无人机' },
+  { key: 'drone', label: '私人无人机' },
+  { key: 'heli', label: '直升机' },
+  { key: 'airliner', label: '民航客机' },
+  { key: 'transport', label: '军用运输机' }
+];
+var PIXELS = {
+  airliner: ['......#......', '......#......', '......#......', '.....###.....', '#############', '....#####....', '.....###.....', '.....###.....', '.....###.....'],
+  transport: ['......#......', '......#......', '.....###.....', '#############', '#####.#.#####', '#############', '.....###.....', '.....###.....', '......#......'],
+  fighter: ['......#......', '......#......', '.....###.....', '.....###.....', '##..#####..##', '.###########.', '.....###.....', '....##.##....'],
+  uav: ['.............', '......#......', '......#......', '...#######...', '......#......', '......#......', '.............'],
+  drone: ['##.........##', '#.#..###..#.#', '..#.#####.#..', '....#####....', '..#.#####.#..', '#.#..###..#.#', '##.........##'],
+  heli: ['....#####....', '..##.....##..', '.#.........#.', '.#..######..#', '.#..######..#', '.#......#####', '.#.........#.', '..##.....##..', '....#####....']
+};
+var SCI_EXTRA = {
+  imaging: 'ISAR 逆合成孔径：目标自身飞行把「角度信息」转化成多普勒差异，配带宽给的距离向，合成出二维像。'
+};
+
+/* ================= 状态 ================= */
+var S = null;
+function freshState() {
+  return {
+    mode: 'attract', // attract | play | waveRest | over
+    score: 0, lives: 3, wave: 0,
+    waveT: 0, restT: 0, script: [], spawned: 0,
+    targets: [], missiles: [], flashes: [], pops: [], confetti: [], rings: [],
+    redFlash: 0, shake: 0,
+    sel: null, sweep: 0,
+    stats: { fire: 0, release: 0, escort: 0, breach: 0, hurt: 0, img: 0, counter: 0 },
+    log: [], unlocked: {}, hints: []
+  };
+}
+S = freshState();
+
+/* ================= 日志/HUD ================= */
+function logLine(txt, cls) {
+  S.log.unshift({ t: txt, c: cls || '' });
+  if (S.log.length > 6) S.log.pop();
+  var ul = $('log');
+  ul.innerHTML = '';
+  for (var i = 0; i < S.log.length; i++) {
+    var li = document.createElement('li');
+    li.className = S.log[i].c;
+    li.textContent = S.log[i].t;
+    ul.appendChild(li);
+  }
+}
+function hud() {
+  $('hWave').textContent = S.wave > 0 ? S.wave : '—';
+  $('hScore').textContent = S.score;
+  var hearts = '';
+  for (var i = 0; i < 3; i++) hearts += i < S.lives ? '♥' : '<span class="lost">♥</span>';
+  $('hLives').innerHTML = hearts;
+  if (S.mode === 'play') { $('hPhase').textContent = '警戒'; $('hTime').textContent = Math.max(0, Math.ceil(25 - S.waveT)); }
+  else if (S.mode === 'waveRest') { $('hPhase').textContent = '休整'; $('hTime').textContent = Math.ceil(S.restT); }
+  else { $('hPhase').textContent = S.mode === 'over' ? '结束' : '待命'; $('hTime').textContent = '--'; }
+}
+
+/* ================= 波次脚本 ================= */
+function addAt(arr, t, type, hint) { arr.push({ at: t, type: type, hint: !!hint }); }
+function waveScript(n) {
+  var a = [];
+  if (n === 1) {
+    addAt(a, 1.5, 'airliner', true); addAt(a, 7, 'transport', true);
+    addAt(a, 12.5, 'airliner'); addAt(a, 18, 'transport');
+  } else if (n === 2) {
+    addAt(a, 2, 'fighter', true); addAt(a, 6.5, 'airliner');
+    addAt(a, 11, 'transport'); addAt(a, 15, 'fighter'); addAt(a, 20, 'airliner');
+  } else if (n === 3) {
+    addAt(a, 2, 'uav', true); addAt(a, 5, 'uav_reg', true);
+    addAt(a, 9, 'airliner'); addAt(a, 13, 'fighter');
+    addAt(a, 17, 'uav_reg'); addAt(a, 21, 'transport');
+  } else if (n === 4) {
+    addAt(a, 2, 'uav_dark', true); addAt(a, 6, 'airliner');
+    addAt(a, 9.5, 'fighter'); addAt(a, 13, 'uav_reg');
+    addAt(a, 16.5, 'uav'); addAt(a, 20, 'transport');
+  } else if (n === 5) {
+    addAt(a, 2.5, 'disguised', true); addAt(a, 8, 'faulty', true);
+    addAt(a, 12, 'fighter'); addAt(a, 15.5, 'uav_dark');
+    addAt(a, 19, 'airliner'); addAt(a, 22, 'uav_reg');
+  } else if (n === 6) {
+    addAt(a, 2, 'heli_civ', true); addAt(a, 6, 'airliner');
+    addAt(a, 9.5, 'heli_mil', true); addAt(a, 13, 'uav_reg');
+    addAt(a, 17, 'fighter'); addAt(a, 20, 'heli_civ');
+  } else {
+    var f = 2 + Math.floor(n / 2), speed = Math.min(1.45, 1 + 0.055 * (n - 4));
+    var t = 1.5, i = 0;
+    var pool = [];
+    for (var k = 0; k < f; k++) pool.push('fighter');
+    pool.push('uav', 'uav'); pool.push('disguised');
+    if (n >= 6) pool.push('uav_reg', 'uav_dark');
+    if (n >= 7) pool.push('heli_civ', 'heli_mil');
+    if (n % 2) pool.push('faulty');
+    pool.push('airliner', 'airliner', 'transport');
+    if (n > 6) pool.push('fighter', 'uav');
+    while (pool.length && t < 24) {
+      var idx = Math.floor(Math.random() * pool.length);
+      var ty = pool.splice(idx, 1)[0];
+      addAt(a, t, ty);
+      t += rand(2.6, 4.2) / speed;
+      i++;
+    }
+    a.speedMul = speed;
+  }
+  return a;
+}
+function startWave() {
+  S.wave++;
+  S.waveT = 0; S.script = waveScript(S.wave); S.spawned = 0; S.mode = 'play';
+  logLine('—— 第 ' + S.wave + ' 波 · 警戒开始 ——');
+  var bx = S.wave === 3 ? ' · 小光点：军用/私人' : S.wave === 4 ? ' · 无广播悬停＝黑飞' : S.wave === 5 ? ' · 校验失败？成像！' : S.wave === 6 ? ' · 旋翼目标：看脉动' : '';
+  banner('第 ' + S.wave + ' 波' + bx);
+  hud();
+}
+
+/* ================= 目标 ================= */
+function spawn(typeKey, withHint) {
+  var T = TYPES[typeKey];
+  var ang = rand(0, TAU);
+  var enemy = T.side === 'enemy';
+  var x, y, vx, vy;
+  if (T.hover) {
+    var hr = rand(0.45, 0.75), ha = rand(0, TAU);
+    x = Math.cos(ha) * hr; y = Math.sin(ha) * hr;
+    vx = rand(-0.006, 0.006); vy = rand(-0.006, 0.006);
+  } else if (enemy) {
+    var off = rand(-0.25, 0.25);
+    var px = Math.cos(ang + Math.PI / 2) * off, py = Math.sin(ang + Math.PI / 2) * off;
+    var ex = Math.cos(ang), ey = Math.sin(ang);
+    x = ex; y = ey;
+    var d0 = Math.sqrt(px * px + py * py);
+    vx = (0 - x) ; vy = (0 - y);
+    var len = Math.sqrt(vx * vx + vy * vy);
+    vx = (vx + (px - x) * 0.0) / len; vy = (vy + (py - y) * 0.0) / len;
+    // 直奔中心（带小侧偏）
+    var tx = px * 0.2, ty = py * 0.2;
+    vx = tx - x; vy = ty - y;
+    len = Math.sqrt(vx * vx + vy * vy); vx /= len; vy /= len;
+  } else {
+    // 横穿：入点对面出点，路径过中心附近
+    var pass = rand(-0.35, 0.35), pa = ang + Math.PI / 2;
+    var cx0 = Math.cos(pa) * pass, cy0 = Math.sin(pa) * pass;
+    x = cx0 + Math.cos(ang); y = cy0 + Math.sin(ang);
+    vx = -Math.cos(ang); vy = -Math.sin(ang);
+  }
+  var sp = rand(T.spd[0], T.spd[1]) * (S.script.speedMul || 1);
+  S.targets.push({
+    id: Math.random().toString(36).slice(2), type: typeKey, x: x, y: y,
+    vx: vx * sp, vy: vy * sp, born: S.waveT, hint: withHint,
+    resolved: false, marked: null, imgDone: null, wob: rand(0, TAU)
+  });
+  if (enemy) beeper.alarm();
+  if (withHint) S.hints.push({ id: S.targets[S.targets.length - 1].id, until: S.waveT + 7 });
+}
+
+/* ================= 画布 ================= */
+var cv = $('scope'), ctx = cv.getContext('2d');
+var W = 540, H = 540, CX = 270, CY = 270, R = 250, dpr = 1;
+function fit() {
+  dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  var w = cv.clientWidth || 540;
+  W = H = w;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(w * dpr);
+  CX = CY = w / 2; R = w / 2 - Math.max(14, w * 0.045);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+fit();
+if (window.ResizeObserver) new ResizeObserver(function () { requestAnimationFrame(fit); }).observe(cv);
+cv.addEventListener('pointerdown', function (e) {
+  e.preventDefault(); beeper.ensure();
+  if (S.mode !== 'play') return;
+  var r = cv.getBoundingClientRect();
+  var ux = (e.clientX - r.left - CX) / R, uy = (e.clientY - r.top - CY) / R;
+  var best = null, bd = 0.13;
+  for (var i = 0; i < S.targets.length; i++) {
+    var t = S.targets[i]; if (t.resolved) continue;
+    var d = Math.sqrt(Math.pow(t.x - ux, 2) + Math.pow(t.y - uy, 2));
+    if (d < bd) { bd = d; best = t; }
+  }
+  if (best) { select(best); } else { select(null); }
+});
+function select(t) {
+  S.sel = t;
+  var card = $('idcard');
+  if (!t) { card.hidden = true; return; }
+  beeper.pick();
+  var T = TYPES[t.type];
+  card.hidden = false;
+  if (window.matchMedia('(max-width: 700px)').matches && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('idTitle').textContent = '目标 ' + t.id.toUpperCase() + ' · 识别';
+  var spd = Math.sqrt(t.vx * t.vx + t.vy * t.vy);
+  $('fRcs').textContent = T.rcs + '回波 ' + '▮'.repeat(T.rcs === '大' ? 4 : T.rcs === '中' ? 3 : 2) + '▮'.repeat(T.rcs === '大' ? 0 : T.rcs === '中' ? 0 : 0);
+  var mv = spd > 0.12 ? '快·直奔' : spd > 0.075 ? '中速' : '慢';
+  if (T.pulse) mv = (T.hover ? '悬停' : '低速逼近') + ' · 旋翼脉动';
+  else if (T.jitter) mv = '慢·抖动';
+  $('fMove').textContent = mv + ' · 约 ' + (spd * 10).toFixed(1) + ' Ma（相对值）';
+  var iffEl = $('fIff');
+  $('fIffK').textContent = (t.type === 'uav_reg' || t.type === 'uav_dark') ? '远程识别' : '应答码';
+  if (t.type === 'uav_reg') { iffEl.textContent = '已广播 注册号 UAS-' + t.id.slice(0, 4).toUpperCase() + '（白斑）'; iffEl.className = 'v'; }
+  else if (t.type === 'uav_dark') { iffEl.textContent = '未广播（未注册！）'; iffEl.className = 'v alert'; }
+  else if (T.iff === 'friend') { iffEl.textContent = '我方码 ✓（绿斑）'; iffEl.className = 'v'; }
+  else if (T.iff === 'civil') { iffEl.textContent = '标准民航码（白斑）'; iffEl.className = 'v'; }
+  else if (T.iff === 'fault') { iffEl.textContent = '校验失败（琥珀闪烁）'; iffEl.className = 'v alert'; }
+  else { iffEl.textContent = '无应答（无斑）'; iffEl.className = 'v alert'; }
+  $('rowImg').hidden = !t.imgDone;
+  if (t.imgDone) $('fImg').textContent = '已确认：' + quizName(t.imgDone);
+  $('fRcs').textContent = '回波 ' + T.rcs;
+  renderActs(t);
+}
+function renderActs(t) {
+  var T = TYPES[t.type];
+  var imgBtn = document.querySelector('[data-act="image"]');
+  imgBtn.disabled = !!t.imgBusy || !!t.imgDone;
+  imgBtn.textContent = t.imgDone ? '已成像'
+    : t.imgBusy ? (t.libT !== undefined ? '图库识别中…' : '成像中…')
+    : (S.unlocked[truthOf(t)] ? '上报成像 ·图库' : '上报成像');
+  var fireBtn = document.querySelector('[data-act="fire"]');
+  var isDrone = t.type === 'uav' || t.type === 'uav_reg' || t.type === 'uav_dark';
+  var fireLabel = isDrone ? '拦截 / 反制' : '拦截';
+  fireBtn.innerHTML = fireLabel + '<span style="opacity:.5"> 3</span>';
+  var relBtn = document.querySelector('[data-act="release"]');
+  relBtn.innerHTML = '放行' + '<span style="opacity:.5"> 1</span>';
+}
+$('acts').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  act(b.getAttribute('data-act'));
+});
+function act(name) {
+  var t = S.sel;
+  if (!t || t.resolved || S.mode !== 'play') return;
+  var T = TYPES[t.type];
+  if (name === 'fire') {
+    S.missiles.push({ x: 0, y: 0, tx: t, t: 0 });
+    beeper.tone(1200, 0.08, 'sawtooth', 0.05);
+  } else if (name === 'release') {
+    if (T.side === 'civil') {
+      t.marked = 'release'; S.score += 20; S.stats.release++;
+      logLine('✓ ' + T.name + ' ' + t.id.slice(0, 3).toUpperCase() + ' 放行通过 +20', 'good'); beeper.good();
+      fxPass(t.x, t.y, 20);
+    } else if (T.side === 'reg') {
+      S.score += 20; S.stats.release++;
+      logLine('✓ 已注册无人机合规飞行，放行 +20', 'good'); beeper.good();
+      fxPass(t.x, t.y, 20);
+    } else if (T.side === 'dark') {
+      S.score = Math.max(0, S.score - 40);
+      S.stats.dark = (S.stats.dark || 0) + 1;
+      logLine('⚠ 放任黑飞？它还在原地飞！-40 正确做法：拦截反制', 'crit'); beeper.bad();
+      fxBad(t.x, t.y, '-40');
+    } else if (T.side === 'friend') {
+      S.score -= 20; logLine('✗ 放行了我军运输机！指挥混乱 -20', 'bad'); beeper.bad();
+      fxPop(t.x, t.y, '-20', '#ff6161', true); hudPulse(false);
+    } else {
+      loseLife('把' + T.name + '放进了要地！漏放 -1 结构');
+      S.stats.breach++;
+    }
+    done(t);
+  } else if (name === 'escort') {
+    if (T.side === 'friend') {
+      t.marked = 'escort'; S.score += 50; S.stats.escort++;
+      fxPass(t.x, t.y, 50);
+      var sp = Math.sqrt(t.vx * t.vx + t.vy * t.vy) || 1;
+      t.vx = (-t.x) / sp * sp; t.vy = (-t.y) / sp * sp;
+      t.vx = -t.x * 0.14; t.vy = -t.y * 0.14;
+      t.escorting = true;
+      logLine('✓ 运输机 ' + t.id.slice(0, 3).toUpperCase() + ' 引导入场 +50', 'good'); beeper.good();
+    } else if (T.side === 'civil') {
+      S.score = Math.max(0, S.score - 30);
+      logLine('✗ 对民航发引导指令，被投诉 -30', 'bad'); beeper.bad();
+      fxPop(t.x, t.y, '-30', '#ff6161', true); hudPulse(false);
+    } else if (T.side === 'reg' || T.side === 'dark') {
+      S.score = Math.max(0, S.score - 20);
+      logLine('△ 无人机听不懂引导指令 -20', 'bad'); beeper.bad();
+      fxPop(t.x, t.y, '-20', '#ff6161', true); hudPulse(false);
+    } else {
+      loseLife('敌机伪装应答混入引导航道！-1 结构', t.x, t.y);
+    }
+    if (T.side !== 'friend') done(t);
+  } else if (name === 'image') {
+    if (t.imgBusy || t.imgDone) return;
+    t.imgBusy = true;
+    beeper.tone(980, 0.1, 'sine', 0.06);
+    if (S.unlocked[truthOf(t)]) {
+      t.libT = 1.0; // 图库秒识：凝视1秒直接出结论，不弹答题
+      renderActs(t);
+    } else {
+      openImaging(t);
+    }
+  }
+  hud();
+}
+function resolveFire(t) {
+  if (t.resolved) return;
+  var T = TYPES[t.type];
+  boomAt(t.x, t.y);
+  if (T.side === 'dark') {
+    S.score += 60; S.stats.counter++;
+    logLine('✓ 反制迫降黑飞无人机，移交查处 +60', 'good'); beeper.boom();
+    fxGood(t.x, t.y, 60, false);
+  } else if (T.side === 'reg') {
+    S.score = Math.max(0, S.score - 60);
+    logLine('⚠ 误伤已注册合规无人机！-60 合规飞行受法律保护', 'crit'); beeper.bad();
+    fxBad(t.x, t.y, '-60');
+  } else if (T.side === 'enemy') {
+    var pts = t.type === 'uav' ? 80 : 100;
+    S.score += pts; S.stats.fire++;
+    logLine('✓ 拦截' + T.name + '成功 +' + pts, 'good'); beeper.boom();
+    fxGood(t.x, t.y, pts, true);
+  } else if (T.side === 'civil') {
+    S.redFlash = 1.3; S.shake = 14;
+    S.stats.hurt++;
+    gameOver(T.type === 'airliner'
+      ? ('误伤民航客机 ' + t.id.slice(0, 3).toUpperCase() + '。屏幕上那点白斑，本是 200 条人命的应答。')
+      : ('误伤' + T.name + ' ' + t.id.slice(0, 3).toUpperCase() + '。白斑本是在报"我是合规的"，这一炮打错了。'));
+    return;
+  } else {
+    loseLife('拦截了我军运输机！严重事故 -1 结构', t.x, t.y);
+  }
+  done(t);
+  if (S.sel === t) select(null);
+}
+function done(t) {
+  t.resolved = true;
+  if (S.sel === t) select(null);
+  hud();
+}
+function boomAt(x, y) { S.flashes.push({ x: x, y: y, t: 0 }); }
+function fxPop(x, y, txt, color, big) {
+  S.pops.push({ x: x, y: y, txt: txt, color: color || '#5af0aa', t: 0, big: !!big });
+  if (S.pops.length > 14) S.pops.shift();
+}
+function hudPulse(up) {
+  var el = $('hScore');
+  el.classList.remove('pulse-up', 'pulse-down');
+  void el.offsetWidth;
+  el.classList.add(up ? 'pulse-up' : 'pulse-down');
+}
+function fxBurst(x, y, kind) {
+  var cols = kind === 'bad' ? ['#ff6161', '#e6a817'] : ['#5af0aa', '#ffd97a', '#cfe8d8', '#e6a817'];
+  var n = kind === 'big' ? 30 : kind === 'bad' ? 14 : 20;
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * TAU, v = (kind === 'big' ? 1.15 : 0.8) * (0.4 + Math.random() * 0.9);
+    S.confetti.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.55,
+      rot: Math.random() * 6, vr: (Math.random() - 0.5) * 12, life: 0.8 + Math.random() * 0.6,
+      t: 0, color: cols[i % cols.length], w: 3 + Math.random() * 3 });
+  }
+}
+function fxGood(x, y, pts, big) { // 仅火力动作使用：火光余辉 + 纸屑
+  fxPop(x, y, '+' + pts, big ? '#ffd97a' : '#5af0aa', big);
+  fxBurst(x, y, big ? 'big' : 'good');
+  hudPulse(true);
+}
+function fxPass(x, y, pts) { // 放行/引导/确认：绿环扩散 + ✓ 浮字（绝无爆炸感）
+  fxPop(x, y, '✓ +' + pts, '#5af0aa', false);
+  S.rings.push({ x: x, y: y, t: 0 });
+  S.rings.push({ x: x, y: y, t: -0.14 });
+  hudPulse(true);
+}
+function fxBad(x, y, txt) {
+  fxPop(x, y, txt, '#ff6161', true);
+  fxBurst(x, y, 'bad');
+  S.redFlash = Math.min(1, S.redFlash + 0.6);
+  S.shake = Math.max(S.shake, 11);
+  hudPulse(false);
+}
+function loseLife(why, x, y) {
+  S.lives--; beeper.bad();
+  S.redFlash = Math.min(1.2, S.redFlash + 0.7);
+  S.shake = Math.max(S.shake, 10);
+  if (x !== undefined) fxPop(x, y, '结构受损', '#ff6161', true);
+  logLine('⚠ ' + why, 'crit');
+  if (S.lives <= 0) gameOver('哨所结构归零，值班中断。');
+  hud();
+}
+
+/* ================= 成像识别 ================= */
+var IMG = null;
+function openImaging(t) {
+  IMG = { t: t, progress: 0, done: false, answer: null };
+  $('imgStat').textContent = '波束凝视中，二维像合成里……目标仍在逼近！';
+  var box = $('imgChoices'); box.innerHTML = '';
+  $('ovImage').hidden = false;
+  drawImageCanvas(0);
+}
+var HOTSPOTS = {
+  airliner: [[6, 0], [3, 4], [9, 4], [6, 7]],
+  transport: [[6, 0], [2, 4], [10, 4], [6, 3]],
+  fighter: [[6, 0], [1, 4], [11, 4], [6, 5]],
+  uav: [[6, 1], [3, 3], [9, 3]],
+  drone: [[1, 0], [11, 0], [1, 6], [11, 6], [6, 3]],
+  heli: [[6, 3], [6, 4], [12, 5]]
+};
+function drawImageCanvas(progress) {
+  var c = $('imgCv'), g = c.getContext('2d');
+  if (!IMG) return;
+  var key = TYPES[IMG.t.type].imgAs || IMG.t.type;
+  var rows = PIXELS[key] || PIXELS.airliner;
+  var spots = HOTSPOTS[key] || [];
+  g.fillStyle = '#03100a'; g.fillRect(0, 0, 90, 90);
+  var cell = 5, gw = 13 * cell, gh = rows.length * cell;
+  var ox = 20, oy = 6;
+  var revealRows = Math.ceil(rows.length * progress);
+  // 背景散斑（杂波）
+  for (var n2 = 0; n2 < 42; n2++) {
+    g.fillStyle = 'rgba(90,240,170,' + (0.04 + Math.random() * 0.09).toFixed(3) + ')';
+    g.fillRect(ox + Math.floor(Math.random() * 13) * cell, oy + Math.floor(Math.random() * rows.length) * cell, cell - 1, cell - 1);
+  }
+  // 主体（散斑闪烁）
+  for (var y = 0; y < rows.length; y++) {
+    if (y >= revealRows && !IMG.done) continue;
+    for (var x = 0; x < rows[y].length; x++) {
+      if (rows[y][x] !== '#') continue;
+      var a = 0.45 + Math.random() * 0.55;
+      g.fillStyle = 'rgba(90,240,170,' + a.toFixed(2) + ')';
+      g.fillRect(ox + x * cell, oy + y * cell, cell - 1, cell - 1);
+    }
+  }
+  // 旋翼桨叶闪线（直升机的成像身份证）
+  if (key === 'heli' && (IMG.done || 3 < revealRows)) {
+    var fa = 0.2 + 0.8 * Math.abs(Math.sin(performance.now() / 240));
+    g.fillStyle = 'rgba(154,255,204,' + (fa * 0.85).toFixed(2) + ')';
+    g.fillRect(ox, oy + 3 * cell, gw, cell - 1);
+  }
+  // 强散射中心（机头/翼尖/发动机等，独立闪烁）
+  for (var sp = 0; sp < spots.length; sp++) {
+    var sx = spots[sp][0], sy = spots[sp][1];
+    if (sy >= revealRows && !IMG.done) continue;
+    var tw = 0.7 + 0.3 * Math.sin(performance.now() / 130 + sp * 2.1);
+    g.fillStyle = 'rgba(216,255,232,' + (0.2 + 0.72 * tw).toFixed(2) + ')';
+    g.fillRect(ox + sx * cell - 1, oy + sy * cell - 1, cell + 1, cell + 1);
+  }
+  // 扫描线（仅像区）
+  g.fillStyle = 'rgba(0,0,0,.30)';
+  for (var l = oy; l < oy + gh; l += 3) g.fillRect(ox - 2, l, gw + 4, 1);
+  // 未合成区遮罩
+  if (!IMG.done) {
+    g.fillStyle = 'rgba(3,16,10,.92)';
+    g.fillRect(ox - 3, oy + revealRows * cell, gw + 6, 90);
+  }
+  // 坐标轴（距离向 × 多普勒向）
+  g.strokeStyle = '#1d5c3c'; g.lineWidth = 1;
+  g.beginPath();
+  g.moveTo(ox - 6, oy + gh + 3); g.lineTo(ox + gw + 2, oy + gh + 3);
+  g.moveTo(ox - 6, oy + gh + 3); g.lineTo(ox - 6, oy - 2);
+  g.stroke();
+  g.fillStyle = '#3f9c6e'; g.font = '7px monospace'; g.textAlign = 'left';
+  g.fillText('距离向', ox + gw - 22, oy + gh + 12);
+  g.save();
+  g.translate(ox - 10, oy + gh - 4); g.rotate(-Math.PI / 2);
+  g.fillText('多普勒向', 0, 0);
+  g.restore();
+}
+function truthOf(t) { return TYPES[t.type].imgAs || t.type; }
+function quizName(key) {
+  for (var i = 0; i < QUIZ.length; i++) if (QUIZ[i].key === key) return QUIZ[i].label;
+  return TYPES[key] ? TYPES[key].name : key;
+}
+function finishImaging() {
+  IMG.done = true;
+  var ttype = IMG.t.type;
+  $('imgStat').textContent = ttype === 'disguised' || ttype === 'faulty'
+    ? '二维像合成完毕。⚠️ 校验失败的目标有两种真身：故障民航（放行）或伪装敌机（拦截）——以二维像为准！'
+    : '二维像合成完毕。这是什么机型？（按敌我分区，位置固定）';
+  drawImageCanvas(1);
+  var box = $('imgChoices'); box.innerHTML = '';
+  var groups = [
+    { label: '威胁 · 对应「拦截」', keys: ['fighter', 'uav'], cls: 'q-threat' },
+    { label: '友/民 · 对应「放行/引导」', keys: ['drone', 'airliner', 'transport', 'heli'], cls: 'q-civ' }
+  ];
+  groups.forEach(function (grp) {
+    var lab = document.createElement('div');
+    lab.className = 'qz-label ' + grp.cls;
+    lab.textContent = grp.label;
+    box.appendChild(lab);
+    var grid = document.createElement('div');
+    grid.className = 'qz-grid';
+    grp.keys.forEach(function (key) {
+      var label = key;
+      for (var i = 0; i < QUIZ.length; i++) if (QUIZ[i].key === key) label = QUIZ[i].label;
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; b.className = grp.cls;
+      b.addEventListener('click', function () { answerImaging(key); });
+      grid.appendChild(b);
+    });
+    box.appendChild(grid);
+  });
+}
+function answerImaging(key) {
+  if (!IMG || !IMG.done) return;
+  var t = IMG.t, T = TYPES[t.type];
+  var truth = TYPES[t.type].imgAs || t.type;
+  t.imgBusy = false;
+  t.imgDone = truth;
+  S.stats.img++;
+  S.unlocked[truth] = true;
+  $('ovImage').hidden = true;
+  if (key === truth) {
+    S.score += 80;
+    logLine('✓ 成像识别：' + quizName(truth) + ' +80（图鉴已收录）', 'good'); beeper.good();
+    fxPass(t.x, t.y, 80);
+  } else {
+    S.score = Math.max(0, S.score - 30);
+    logLine('△ 识别误判（实为' + quizName(truth) + '）-30，图鉴已收录', 'bad'); beeper.bad();
+    fxBad(t.x, t.y, '-30');
+  }
+  if (S.targets.indexOf(t) >= 0) select(t); else S.sel = null;
+  IMG = null;
+  hud();
+}
+
+/* ================= 逐帧更新 ================= */
+function update(dt) {
+  if (window.__creatorOpen) return;
+  S.sweep = (S.sweep + dt * (TAU / 4.2)) % TAU;
+  for (var pi = S.pops.length - 1; pi >= 0; pi--) {
+    var pp = S.pops[pi]; pp.t += dt / 1.15; pp.y -= dt * 0.22;
+    if (pp.t >= 1) S.pops.splice(pi, 1);
+  }
+  for (var ci = S.confetti.length - 1; ci >= 0; ci--) {
+    var cc = S.confetti[ci]; cc.t += dt / cc.life;
+    cc.x += cc.vx * dt; cc.y += cc.vy * dt; cc.vy += 1.8 * dt; cc.rot += cc.vr * dt;
+    if (cc.t >= 1) S.confetti.splice(ci, 1);
+  }
+  S.redFlash = Math.max(0, S.redFlash - dt * 1.3);
+  S.shake = Math.max(0, S.shake - dt * 26);
+  for (var ri = S.rings.length - 1; ri >= 0; ri--) {
+    S.rings[ri].t += dt / 0.7;
+    if (S.rings[ri].t >= 1) S.rings.splice(ri, 1);
+  }
+  if (S.mode === 'waveRest') {
+    S.restT -= dt;
+    hud();
+    if (S.restT <= 0) { $('ovWave').hidden = true; startWave(); }
+    return;
+  }
+  if (S.mode !== 'play') return;
+  S.waveT += dt;
+  while (S.spawned < S.script.length && S.script[S.spawned].at <= S.waveT) {
+    spawn(S.script[S.spawned].type, S.script[S.spawned].hint);
+    S.spawned++;
+  }
+  var breach = 0.16;
+  for (var i = S.targets.length - 1; i >= 0; i--) {
+    var t = S.targets[i];
+    if (t.resolved) { S.targets.splice(i, 1); continue; }
+    var T = TYPES[t.type];
+    if (T.jitter && !t.resolved) {
+      t.wob += dt * 3;
+      t.x += Math.cos(t.wob) * 0.0016; t.y += Math.sin(t.wob * 1.3) * 0.0016;
+    }
+    if (T.hover) {
+      t.dwell = (t.dwell === undefined ? (T.dwell || 14) : t.dwell) - dt;
+      if (t.dwell <= 0) {
+        if (T.side === 'dark') {
+          S.score = Math.max(0, S.score - 40);
+          S.stats.dark = (S.stats.dark || 0) + 1;
+          logLine('⚠ 黑飞机滞留管制区，航班避让 -40——黑飞不能放任', 'crit');
+          fxBad(t.x, t.y, '-40');
+        } else {
+          logLine(T.name + ' 合规飞行结束，离场');
+        }
+        if (S.sel === t) select(null);
+        S.targets.splice(i, 1); continue;
+      }
+    }
+    if (t.imgBusy && t.libT !== undefined) {
+      t.libT -= dt;
+      if (t.libT <= 0) {
+        t.imgBusy = false;
+        t.imgDone = truthOf(t);
+        S.score += 40; S.stats.img++;
+        logLine('✓ 图库匹配：' + quizName(t.imgDone) + ' +40，无需再答', 'good');
+        fxPass(t.x, t.y, 40);
+        beeper.tone(880, 0.07, 'sine', 0.07); beeper.tone(1320, 0.09, 'sine', 0.06, 0.07);
+        if (S.sel === t) select(t); else select(t);
+      }
+    }
+    var slowMul = t.imgBusy ? 0.5 : 1; // 波束凝视：电子压制，目标压速
+    t.x += t.vx * dt * slowMul; t.y += t.vy * dt * slowMul;
+    var d = Math.sqrt(t.x * t.x + t.y * t.y);
+    var enemy = T.side === 'enemy';
+    if (t.escorting && d < breach) {
+      S.flashes.push({ x: t.x, y: t.y, t: 0, soft: true });
+      logLine('运输机安全着陆'); done(t); S.targets.splice(i, 1); continue;
+    }
+    if (enemy && d < breach) {
+      S.flashes.push({ x: t.x, y: t.y, t: 0 });
+      loseLife(T.name + '突入内圈！-1 结构', t.x, t.y);
+      S.stats.breach++;
+      if (S.sel === t) select(null);
+      S.targets.splice(i, 1); continue;
+    }
+    if (!enemy && d > 1.12) {
+      if (t.marked !== 'release' && T.side === 'civil') logLine(T.name + ' 未处置，正常过航');
+      if (t.marked !== 'release' && T.side === 'friend') logLine('运输机过航离场（未引导）');
+      if (S.sel === t) select(null);
+      S.targets.splice(i, 1); continue;
+    }
+  }
+  for (var m = S.missiles.length - 1; m >= 0; m--) {
+    var ms = S.missiles[m]; ms.t += dt / 0.42;
+    if (ms.t >= 1) {
+      S.missiles.splice(m, 1);
+      resolveFire(ms.tx);
+    }
+  }
+  for (var f = S.flashes.length - 1; f >= 0; f--) {
+    S.flashes[f].t += dt / (S.flashes[f].soft ? 0.9 : 0.55);
+    if (S.flashes[f].t >= 1) S.flashes.splice(f, 1);
+  }
+  if (IMG) {
+    if (!IMG.done) {
+      IMG.progress = Math.min(1, IMG.progress + dt / 1.0);
+      if (IMG.progress >= 1) finishImaging();
+    }
+    drawImageCanvas(IMG.progress);
+  }
+  if (S.waveT >= 25) endWave();
+  hud();
+}
+function endWave() {
+  S.mode = 'waveRest'; S.restT = 4.5;
+  beeper.wave();
+  $('wvTitle').textContent = '第 ' + S.wave + ' 波结束';
+  $('wvBody').textContent = '当前得分 ' + S.score + ' · 哨所结构 ' + S.lives + '/3 · 内圈突入 ' + S.stats.breach + ' 次。休整片刻，下一波更密。';
+  $('ovWave').hidden = false;
+  select(null);
+  hud();
+}
+
+/* ================= 绘制 ================= */
+function blipAlpha(t) {
+  var a = Math.atan2(t.y, t.x);
+  var da = (S.sweep - a) % TAU; if (da < 0) da += TAU;
+  return clamp(Math.pow(1 - da / TAU, 1.5), 0.16, 1);
+}
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#04120c'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.translate(CX, CY);
+  if (S.shake > 0.3) ctx.translate((Math.random() - 0.5) * S.shake, (Math.random() - 0.5) * S.shake);
+  ctx.fillStyle = '#04120c'; ctx.fillRect(-30, -30, W + 60, H + 60);
+  // 刻度环
+  ctx.strokeStyle = '#0e3524'; ctx.lineWidth = 1;
+  for (var rr = 1; rr <= 4; rr++) { ctx.beginPath(); ctx.arc(0, 0, R * rr / 4, 0, TAU); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(-R, 0); ctx.lineTo(R, 0); ctx.moveTo(0, -R); ctx.lineTo(0, R); ctx.stroke();
+  for (var a30 = 0; a30 < 12; a30++) {
+    var an = a30 * TAU / 12;
+    ctx.fillStyle = '#3f9c6e'; ctx.font = Math.max(9, R * 0.045) + 'px monospace'; ctx.textAlign = 'center';
+    var lx = Math.cos(an) * (R + 11), ly = Math.sin(an) * (R + 11);
+    if (Math.abs(lx) < W / 2 - 4 && Math.abs(ly) < H / 2 - 4)
+      ctx.fillText(('0' + a30 * 30).slice(-3), lx, ly + 3);
+  }
+  // 内圈
+  ctx.strokeStyle = '#1d5c3c'; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.arc(0, 0, R * 0.16, 0, TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  // 扫掠余辉
+  var slices = 46;
+  for (var s2 = 0; s2 < slices; s2++) {
+    var a0 = S.sweep - s2 * 0.045;
+    ctx.fillStyle = 'rgba(90,240,170,' + (0.30 * (1 - s2 / slices)) + ')';
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.arc(0, 0, R, a0 - 0.05, a0); ctx.closePath(); ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(154,255,204,.9)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, 0);
+  ctx.lineTo(Math.cos(S.sweep) * R, Math.sin(S.sweep) * R); ctx.stroke();
+  // 中心哨所
+  ctx.fillStyle = '#5af0aa';
+  ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, TAU); ctx.fill();
+  ctx.font = Math.max(9, R * 0.05) + 'px monospace'; ctx.fillStyle = '#3f9c6e'; ctx.textAlign = 'center';
+  ctx.fillText('哨所', 0, 14);
+
+  // 目标
+  for (var i = 0; i < S.targets.length; i++) {
+    var t = S.targets[i]; if (t.resolved) continue;
+    var T = TYPES[t.type];
+    var px = t.x * R, py = t.y * R;
+    var al = blipAlpha(t);
+    if (t === S.sel) al = Math.max(al, 0.85);
+    if (T.pulse) al *= 0.5 + 0.5 * Math.abs(Math.sin(performance.now() / 240));
+    var br = T.blip * (R / 250);
+    ctx.globalAlpha = al;
+    ctx.fillStyle = '#7df0b8';
+    ctx.shadowColor = '#5af0aa'; ctx.shadowBlur = 10 * al;
+    ctx.beginPath(); ctx.arc(px, py, br, 0, TAU); ctx.fill();
+    ctx.shadowBlur = 0;
+    // 应答斑
+    var ba = Math.atan2(t.y, t.x) + (T.spot === 'green' ? -0.42 : 0.42);
+    if (T.spot && T.spot !== 'none') {
+      var dx = Math.cos(ba) * (br + 7), dy = Math.sin(ba) * (br + 7);
+      ctx.globalAlpha = T.spot === 'amber' ? al * (0.35 + 0.65 * Math.abs(Math.sin(performance.now() / 160))) : al;
+      ctx.fillStyle = T.spot === 'green' ? '#5af0aa' : T.spot === 'white' ? '#cfe8d8' : '#e6a817';
+      ctx.beginPath(); ctx.arc(px + dx, py + dy, 2.4 * (R / 250) + 0.8, 0, TAU); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // 选中框
+    if (t === S.sel) {
+      ctx.strokeStyle = '#e6a817'; ctx.lineWidth = 1.5;
+      var bx = br + 6;
+      ctx.beginPath();
+      ctx.moveTo(px - bx, py - bx + 5); ctx.lineTo(px - bx, py - bx); ctx.lineTo(px - bx + 5, py - bx);
+      ctx.moveTo(px + bx - 5, py - bx); ctx.lineTo(px + bx, py - bx); ctx.lineTo(px + bx, py - bx + 5);
+      ctx.moveTo(px + bx, py + bx - 5); ctx.lineTo(px + bx, py + bx); ctx.lineTo(px + bx - 5, py + bx);
+      ctx.moveTo(px - bx + 5, py + bx); ctx.lineTo(px - bx, py + bx); ctx.lineTo(px - bx, py + bx - 5);
+      ctx.stroke();
+    }
+    // 教学浮标
+    if (t.hint && S.waveT < 9 && S.mode === 'play') {
+      ctx.globalAlpha = clamp(9 - S.waveT, 0, 1);
+      ctx.fillStyle = '#cfe8d8'; ctx.font = Math.max(10, R * 0.05) + 'px monospace'; ctx.textAlign = 'left';
+      ctx.fillText(TYPES[t.type].hint, px + br + 8, py + 3);
+      ctx.globalAlpha = 1;
+    }
+  }
+  // 拦截弹
+  for (var m = 0; m < S.missiles.length; m++) {
+    var ms = S.missiles[m];
+    var gx = ms.tx.x * R, gy = ms.tx.y * R;
+    var mx = gx * ms.t, my = gy * ms.t;
+    ctx.strokeStyle = '#e6a817'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(mx, my); ctx.stroke();
+    ctx.fillStyle = '#ffd97a';
+    ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, TAU); ctx.fill();
+  }
+  // 爆闪
+  for (var f = 0; f < S.flashes.length; f++) {
+    var fl = S.flashes[f];
+    ctx.globalAlpha = 1 - fl.t;
+    ctx.strokeStyle = fl.soft ? '#5af0aa' : '#ffd97a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(fl.x * R, fl.y * R, 6 + fl.t * 16, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  // 浮动得分数字
+  ctx.textAlign = 'center';
+  for (var p3 = 0; p3 < S.pops.length; p3++) {
+    var pp3 = S.pops[p3];
+    ctx.globalAlpha = Math.max(0, 1 - pp3.t);
+    ctx.font = 'bold ' + Math.round((pp3.big ? 19 : 14.5) * (R / 250)) + 'px monospace';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(2,10,6,.85)';
+    ctx.strokeText(pp3.txt, pp3.x * R, pp3.y * R - pp3.t * R * 0.16);
+    ctx.fillStyle = pp3.color;
+    ctx.fillText(pp3.txt, pp3.x * R, pp3.y * R - pp3.t * R * 0.16);
+  }
+  ctx.globalAlpha = 1;
+  // 通过确认：绿色扩散环（双环）
+  for (var rn = 0; rn < S.rings.length; rn++) {
+    var rg1 = S.rings[rn];
+    if (rg1.t < 0) continue;
+    ctx.globalAlpha = (1 - rg1.t) * 0.9;
+    ctx.strokeStyle = '#5af0aa';
+    ctx.lineWidth = Math.max(1, 2.6 * (1 - rg1.t));
+    ctx.beginPath();
+    ctx.arc(rg1.x * R, rg1.y * R, (0.03 + rg1.t * 0.11) * R, 0, 7);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // 撒花纸屑
+  for (var c4 = 0; c4 < S.confetti.length; c4++) {
+    var cc4 = S.confetti[c4];
+    ctx.save();
+    ctx.translate(cc4.x * R, cc4.y * R);
+    ctx.rotate(cc4.rot);
+    ctx.globalAlpha = Math.max(0, 1 - cc4.t);
+    ctx.fillStyle = cc4.color;
+    ctx.fillRect(-cc4.w / 2, -cc4.w / 4, cc4.w, cc4.w / 2);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  drawOperator(performance.now());
+  // 负反馈红晕
+  if (S.redFlash > 0.02) {
+    var rg2 = ctx.createRadialGradient(0, 0, R * 0.3, 0, 0, R * 1.06);
+    rg2.addColorStop(0, 'rgba(229,72,77,0)');
+    rg2.addColorStop(1, 'rgba(229,72,77,' + (0.5 * Math.min(1, S.redFlash)).toFixed(3) + ')');
+    ctx.fillStyle = rg2;
+    ctx.fillRect(-R * 1.1, -R * 1.1, R * 2.2, R * 2.2);
+  }
+  ctx.restore();
+}
+
+/* ================= 值班员（登记处形象锚点） ================= */
+function shade(hex, amt) {
+  var r, g, b;
+  if (hex && hex[0] === '#') {
+    var n = parseInt(hex.slice(1), 16);
+    r = (n >> 16) + amt; g = ((n >> 8) & 255) + amt; b = (n & 255) + amt;
+  } else {
+    var m = (hex || '').match(/\d+/g);
+    if (!m) return hex;
+    r = +m[0] + amt; g = +m[1] + amt; b = +m[2] + amt;
+  }
+  return 'rgb(' + clamp(r, 0, 255) + ',' + clamp(g, 0, 255) + ',' + clamp(b, 0, 255) + ')';
+}
+var headAng = 0;
+function drawOperator(now) {
+  var cfg = window.__heroCfg || {};
+  var uni = cfg.uniCol || '#25402f';
+  var species = cfg.species || 'human';
+  var head = cfg.headCol || (species === 'human' ? '#d9a877' : '#eda055');
+  var earCol = cfg.earCol || shade(head, -24);
+  var s = R / 250;
+  var breathe = Math.sin(now / 850) * 0.5 + 0.5;
+  // 头部跟随选中目标（0.07 缓动）
+  var follow = (S.sel && S.mode === 'play') ? clamp(S.sel.x * 0.5, -0.3, 0.3) : 0;
+  headAng += (follow - headAng) * 0.07;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.clip();
+  // ---- 上半身（真实比例：颈→斜方肌→三角肌→垂臂→收腰） ----
+  ctx.save();
+  ctx.translate(0, R); ctx.scale(1, 1 + breathe * 0.008); ctx.translate(0, -R);
+  var shY = R * 0.908;   // 肩线
+  var shX = R * 0.30;    // 三角肌外缘半宽（总肩宽 ≈ 2.6 倍头宽）
+  // 上臂（垂落，略深于躯干以分层）
+  ctx.fillStyle = shade(uni, -16);
+  ctx.beginPath();
+  ctx.moveTo(-shX - R * 0.062, shY + R * 0.028);
+  ctx.quadraticCurveTo(-shX - R * 0.092, shY + R * 0.09, -shX - R * 0.07, R);
+  ctx.lineTo(-shX + R * 0.055, R);
+  ctx.quadraticCurveTo(-shX + R * 0.04, shY + R * 0.09, -shX + R * 0.048, shY + R * 0.035);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(shX + R * 0.062, shY + R * 0.028);
+  ctx.quadraticCurveTo(shX + R * 0.092, shY + R * 0.09, shX + R * 0.07, R);
+  ctx.lineTo(shX - R * 0.055, R);
+  ctx.quadraticCurveTo(shX - R * 0.04, shY + R * 0.09, shX - R * 0.048, shY + R * 0.035);
+  ctx.closePath(); ctx.fill();
+  // 躯干 + 斜方肌坡线（微收腰）
+  ctx.fillStyle = uni;
+  ctx.beginPath();
+  ctx.moveTo(-R * 0.155, R);
+  ctx.quadraticCurveTo(-R * 0.168, shY + R * 0.05, -shX * 0.78, shY + R * 0.028);
+  ctx.quadraticCurveTo(-shX * 0.6, shY + R * 0.004, -R * 0.075, shY - R * 0.026);
+  ctx.quadraticCurveTo(0, shY - R * 0.036, R * 0.075, shY - R * 0.026);
+  ctx.quadraticCurveTo(shX * 0.6, shY + R * 0.004, shX * 0.78, shY + R * 0.028);
+  ctx.quadraticCurveTo(R * 0.168, shY + R * 0.05, R * 0.155, R);
+  ctx.closePath(); ctx.fill();
+  // 三角肌圆面（圆肩）
+  ctx.fillStyle = shade(uni, 8);
+  ctx.beginPath(); ctx.arc(-shX, shY + R * 0.045, R * 0.082, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(shX, shY + R * 0.045, R * 0.082, 0, 7); ctx.fill();
+  // 肩上沿高光
+  ctx.strokeStyle = 'rgba(255,255,255,.10)'; ctx.lineWidth = 2 * s;
+  ctx.beginPath(); ctx.moveTo(-R * 0.075, shY - R * 0.026); ctx.quadraticCurveTo(0, shY - R * 0.036, R * 0.075, shY - R * 0.026); ctx.stroke();
+  // 磷光轮廓（肩线外缘）
+  ctx.strokeStyle = 'rgba(90,240,170,.20)'; ctx.lineWidth = 2 * s;
+  ctx.beginPath();
+  ctx.moveTo(-shX - R * 0.05, shY + R * 0.05);
+  ctx.quadraticCurveTo(-shX * 0.62, shY - R * 0.006, -R * 0.075, shY - R * 0.028);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(shX + R * 0.05, shY + R * 0.05);
+  ctx.quadraticCurveTo(shX * 0.62, shY - R * 0.006, R * 0.075, shY - R * 0.028);
+  ctx.stroke();
+  // V 领
+  ctx.fillStyle = shade(uni, -18);
+  ctx.beginPath();
+  ctx.moveTo(-R * 0.062, shY - R * 0.024);
+  ctx.lineTo(0, shY + R * 0.006);
+  ctx.lineTo(R * 0.062, shY - R * 0.024);
+  ctx.quadraticCurveTo(0, shY - R * 0.038, -R * 0.062, shY - R * 0.024);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  // ---- 头部组（整体轻转） ----
+  var hr = R * 0.115, hy = R * 0.878 - hr;
+  ctx.save();
+  ctx.translate(0, hy + hr); ctx.rotate(headAng); ctx.translate(0, -(hy + hr));
+  // 颈（从后脑下缘落到领口）
+  ctx.fillStyle = shade(head, -38);
+  ctx.fillRect(-hr * 0.55, R * 0.87, hr * 1.1, R * 0.05);
+  // 耳朵（后脑视角）
+  var ec = earCol;
+  ctx.fillStyle = ec;
+  if (species === 'cat') {
+    ctx.beginPath(); ctx.moveTo(-hr * 0.95, hy - hr * 0.28); ctx.lineTo(-hr * 1.06, hy - hr * 1.6); ctx.lineTo(-hr * 0.12, hy - hr * 0.95); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hr * 0.95, hy - hr * 0.28); ctx.lineTo(hr * 1.06, hy - hr * 1.6); ctx.lineTo(hr * 0.12, hy - hr * 0.95); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = shade(earCol, 30);
+    ctx.beginPath(); ctx.moveTo(-hr * 0.82, hy - hr * 0.48); ctx.lineTo(-hr * 0.9, hy - hr * 1.3); ctx.lineTo(-hr * 0.32, hy - hr * 0.88); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hr * 0.82, hy - hr * 0.48); ctx.lineTo(hr * 0.9, hy - hr * 1.3); ctx.lineTo(hr * 0.32, hy - hr * 0.88); ctx.closePath(); ctx.fill();
+  } else if (species === 'dog') {
+    ctx.beginPath(); ctx.ellipse(-hr * 0.95, hy + hr * 0.18, hr * 0.36, hr * 0.74, 0.35, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(hr * 0.95, hy + hr * 0.18, hr * 0.36, hr * 0.74, -0.35, 0, 7); ctx.fill();
+    ctx.fillStyle = shade(earCol, 22);
+    ctx.beginPath(); ctx.ellipse(-hr * 0.93, hy + hr * 0.22, hr * 0.18, hr * 0.5, 0.35, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(hr * 0.93, hy + hr * 0.22, hr * 0.18, hr * 0.5, -0.35, 0, 7); ctx.fill();
+  } else if (species === 'rabbit') {
+    ctx.beginPath(); ctx.ellipse(-hr * 0.42, hy - hr * 1.5, hr * 0.26, hr * 0.86, -0.1, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(hr * 0.42, hy - hr * 1.5, hr * 0.26, hr * 0.86, 0.1, 0, 7); ctx.fill();
+    ctx.fillStyle = shade(earCol, 26);
+    ctx.beginPath(); ctx.ellipse(-hr * 0.42, hy - hr * 1.46, hr * 0.12, hr * 0.6, -0.1, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(hr * 0.42, hy - hr * 1.46, hr * 0.12, hr * 0.6, 0.1, 0, 7); ctx.fill();
+  } else if (species === 'panda') {
+    ctx.beginPath(); ctx.arc(-hr * 0.82, hy - hr * 0.74, hr * 0.4, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(hr * 0.82, hy - hr * 0.74, hr * 0.4, 0, 7); ctx.fill();
+  } else if (species === 'robot') {
+    ctx.strokeStyle = '#0a5236'; ctx.lineWidth = 2.4 * s;
+    ctx.beginPath(); ctx.moveTo(0, hy - hr); ctx.lineTo(0, hy - hr * 1.66); ctx.stroke();
+    ctx.fillStyle = '#e6a817'; ctx.beginPath(); ctx.arc(0, hy - hr * 1.82, hr * 0.15, 0, 7); ctx.fill();
+  }
+  // 头（后脑勺，径向明暗）
+  var hg = ctx.createRadialGradient(-hr * 0.3, hy - hr * 0.35, hr * 0.2, 0, hy, hr * 1.25);
+  hg.addColorStop(0, shade(head, 16)); hg.addColorStop(1, shade(head, -20));
+  ctx.fillStyle = hg;
+  ctx.beginPath(); ctx.arc(0, hy, hr, 0, 7); ctx.fill();
+  // 帽 / 头盔
+  if (cfg.gear === 'cap') {
+    ctx.fillStyle = '#3d6350';
+    ctx.beginPath(); ctx.arc(0, hy - hr * 0.26, hr * 1.04, Math.PI * 1.05, Math.PI * 1.95); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#2c4a3b'; ctx.fillRect(-hr * 1.04, hy - hr * 0.32, hr * 2.08, hr * 0.18);
+  } else if (cfg.gear === 'helmet') {
+    ctx.fillStyle = '#33544a';
+    ctx.beginPath(); ctx.arc(0, hy - hr * 0.08, hr * 1.12, Math.PI, TAU); ctx.closePath(); ctx.fill();
+    ctx.fillRect(-hr * 1.12, hy - hr * 0.08, hr * 2.24, hr * 0.18);
+  }
+  // 头戴耳麦
+  ctx.strokeStyle = '#0f2e20'; ctx.lineWidth = Math.max(3, R * 0.026);
+  ctx.beginPath(); ctx.arc(0, hy, hr * 1.2, Math.PI * 1.16, Math.PI * 1.84); ctx.stroke();
+  ctx.fillStyle = '#123524';
+  ctx.beginPath(); ctx.arc(-hr * 1.1, hy + hr * 0.14, hr * 0.42, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(hr * 1.1, hy + hr * 0.14, hr * 0.42, 0, 7); ctx.fill();
+  ctx.strokeStyle = cfg.accentCol || '#5af0aa'; ctx.lineWidth = 1.5 * s;
+  ctx.beginPath(); ctx.arc(-hr * 1.1, hy + hr * 0.14, hr * 0.42, Math.PI * 0.7, Math.PI * 1.6); ctx.stroke();
+  ctx.beginPath(); ctx.arc(hr * 1.1, hy + hr * 0.14, hr * 0.42, Math.PI * 1.4, Math.PI * 2.3); ctx.stroke();
+  // 右杯天线
+  ctx.strokeStyle = '#0f2e20'; ctx.lineWidth = 1.8 * s;
+  ctx.beginPath(); ctx.moveTo(hr * 1.28, hy + hr * 0.02); ctx.lineTo(hr * 1.5, hy - hr * 0.5); ctx.stroke();
+  ctx.fillStyle = '#e6a817'; ctx.beginPath(); ctx.arc(hr * 1.53, hy - hr * 0.58, 2.2 * s, 0, 7); ctx.fill();
+  // 磷光轮廓辉光（受屏幕光）
+  ctx.strokeStyle = 'rgba(90,240,170,.22)'; ctx.lineWidth = 2.4 * s;
+  ctx.beginPath(); ctx.arc(0, hy, hr * 1.08, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
+  ctx.restore(); // 头部组
+  ctx.restore(); // 裁剪
+}
+
+/* ================= 结束/结算 ================= *//* ================= 结束/结算 ================= */
+var XP_CARDS = [
+  { icon: '🚫', title: '黑飞红线 · 一条不能碰',
+    lines: [
+      '《无人驾驶航空器飞行管理暂行条例》自 2024 年 1 月 1 日起施行——无人机必须实名登记（民航局 UOM 平台）',
+      '管制空域未经批准禁飞：机场净空区、军事设施周边、真高 120 米以上空域',
+      '危害：闯入净空区逼停航班、干扰应急救援、撞击风险——还会让防空哨所虚警，消耗公共资源',
+      '黑飞后果：责令改正、罚款，扰乱公共秩序可治安拘留，造成严重后果须担刑责'
+    ],
+    tip: '一句话：买无人机先登记，飞行先查空域——你看到的每个不明光点，背后都是一次排查成本。' },
+  { icon: '📡', title: 'ISAR 成像 · 给雷达装上"眼睛"',
+    lines: [
+      '普通雷达只能告诉你"有个目标"；而飞机飞过时，机头、机翼、发动机反射的雷达波各不相同，雷达把这些差异重新拼合，就能"画"出这架飞机的样子——这就是 ISAR 成像',
+      '这张"照片"上最亮的往往不是轮廓，而是机翼尖、发动机这些特别会反射雷达波的部位，像一幅由亮点组成的剪影',
+      '有了它，雷达不只说"发现目标"，还能认出"它是哪种飞机"——这对国防意义重大',
+      '你在游戏里看到的合成过程做了大幅简化，真实成像还要克服目标晃动带来的模糊'
+    ],
+    tip: '一句话：ISAR 让雷达从"发现目标"进步到"认出目标"。' },
+  { icon: '🌀', title: '旋翼脉动 · 直升机的"眨眼"',
+    lines: [
+      '直升机的桨叶飞快旋转，会一下一下地遮挡和反射雷达波，所以它在雷达屏上的光点不是恒亮的，而是"一闪一闪"，像在眨眼',
+      '有经验的雷达兵看到这种会眨眼的光点，不用看清外形就能判断：这是一架旋翼飞机',
+      '在 ISAR 二维像上，它还会留下一道横向的桨叶闪线，像专属签名一样——这是任何伪装都藏不住的特征',
+      '游戏里直升机光点会闪，那不是特效，是真实物理'
+    ],
+    tip: '一句话：会眨眼的光点是旋翼机——民用放行，武装拦截。' },
+  { icon: '🛸', title: '低慢小 · 防空最头疼的对手',
+    lines: [
+      '"低慢小"指飞得低、速度慢、体型小的飞行器：无人机、航模、气球——它们是当前防空最难防的对手',
+      '它们贴着地面飞，信号会混进地面杂波里，在雷达屏上只是一粒和鸟差不多大的小点，找到它像大海捞针',
+      '威胁却很大：闯进机场就能逼停航班，混入要地上空后果不堪设想——低慢小防御是世界各国都在攻关的科研难题',
+      '应对靠组合拳：先滤掉地面杂波，再持续跟踪，最后用敌我识别问答（IFF / Remote ID）确认身份'
+    ],
+    tip: '一句话：低慢小考验的不是火力，是"能不能找到、敢不敢开火"的识别功力。' }
+];
+function lbLoad() { try { return JSON.parse(localStorage.getItem('fs_lb') || '[]'); } catch (e) { return []; } }
+function lbSave(lb) { try { localStorage.setItem('fs_lb', JSON.stringify(lb)); } catch (e) {} }
+function overlayConfetti() {
+  var host = document.querySelector('#ovOver .sheet');
+  if (!host) return;
+  var cols = ['#5af0aa', '#ffd97a', '#cfe8d8', '#e6a817'];
+  for (var i = 0; i < 22; i++) {
+    var c = document.createElement('div');
+    c.className = 'ovc';
+    c.style.left = (4 + Math.random() * 92) + '%';
+    c.style.background = cols[i % cols.length];
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)';
+    host.appendChild(c);
+  }
+  setTimeout(function () {
+    var old = host.querySelectorAll('.ovc');
+    for (var j = 0; j < old.length; j++) old[j].remove();
+  }, 3000);
+}
+function rankOf(s) {
+  if (s >= 700) return '雷达团团长';
+  if (s >= 450) return '连长';
+  if (s >= 200) return '班长';
+  return '列兵';
+}
+function gameOver(why) {
+  S.mode = 'over'; S.sel = null; $('idcard').hidden = true;
+  if (IMG) { if (IMG.t) IMG.t.imgBusy = false; IMG = null; }
+  $('ovImage').hidden = true;
+  beeper.over();
+  $('ovTitle').textContent = '值班结束';
+  var h = window.__hero || {};
+  if (h.img) $('ovHeroImg').src = h.img;
+  $('ovHeroTag').textContent = (h.name || '小哨') + ' · ' + (h.no || '');
+  $('ovWhy').textContent = why || '';
+  var g = $('repGrid');
+  g.innerHTML = '';
+  [['fire', '拦截'], ['release', '放行'], ['escort', '引导'], ['img', '成像'], ['counter', '反制'], ['breach', '突入']].forEach(function (p) {
+    var d = document.createElement('div');
+    d.className = 'rg' + (p[0] === 'breach' && S.stats.breach > 0 ? ' crit' : '');
+    d.innerHTML = '<div class="n">' + S.stats[p[0]] + '</div><div class="t">' + p[1] + '</div>';
+    g.appendChild(d);
+  });
+  $('ovRank').textContent = '最终得分 ' + S.score + ' · 评定军衔：' + rankOf(S.score);
+  // ---- 个人积分榜 + 新纪录判定 ----
+  var lb = lbLoad();
+  var oldBest = lb.length ? lb[0].score : -1;
+  var newRecord = S.score > oldBest && S.score > 0;
+  var myEntry = null;
+  if (S.score > 0) {
+    var d = new Date(), pp2 = function (v) { return (v < 10 ? '0' : '') + v; };
+    myEntry = { score: S.score, rank: rankOf(S.score), t: pp2(d.getMonth() + 1) + '-' + pp2(d.getDate()) + ' ' + pp2(d.getHours()) + ':' + pp2(d.getMinutes()) };
+    lb.push(myEntry);
+    lb.sort(function (a, b) { return b.score - a.score; });
+    lb = lb.slice(0, 5);
+    lbSave(lb);
+  }
+  var rec = $('ovRecord');
+  if (newRecord) {
+    rec.hidden = false;
+    rec.innerHTML = '🎉 <b>新个人纪录！</b>' + (oldBest > 0 ? '超越了之前的 ' + oldBest + ' 分' : '首个纪录诞生');
+    overlayConfetti();
+  } else {
+    rec.hidden = true;
+  }
+  var lbEl = $('ovLb');
+  var lbHtml = '<div class="lb-title">📋 个人积分榜 TOP5</div>';
+  if (!lb.length) {
+    lbHtml += '<div class="lb-row"><span class="lbt">暂无记录 —— 本局得分将载入史册</span></div>';
+  } else {
+    for (var li = 0; li < lb.length; li++) {
+      var isNew = myEntry && lb[li] === myEntry;
+      lbHtml += '<div class="lb-row' + (isNew ? ' new' : '') + '">' +
+        '<span class="lbi">#' + (li + 1) + '</span>' +
+        '<span class="lbs">' + lb[li].score + '</span>' +
+        '<span>' + lb[li].rank + '</span>' +
+        '<span class="lbt">' + lb[li].t + '</span></div>';
+    }
+  }
+  lbEl.innerHTML = lbHtml;
+  // ---- 经验卡：黑飞事件强制触发黑飞卡，否则轮换 ----
+  var lastXp = +(localStorage.getItem('fs_xp') || -1);
+  var xpIdx = (S.stats.dark || 0) > 0 ? 0 : (lastXp + 1) % XP_CARDS.length;
+  try { localStorage.setItem('fs_xp', String(xpIdx)); } catch (e) {}
+  var XC = XP_CARDS[xpIdx];
+  $('xpIco').textContent = XC.icon;
+  $('xpTitle').textContent = XC.title;
+  $('xpNo').textContent = '经验卡 ' + (xpIdx + 1) + '/' + XP_CARDS.length;
+  var xb = $('xpBody'); xb.innerHTML = '';
+  XC.lines.forEach(function (ln) {
+    var dv = document.createElement('div'); dv.textContent = ln; xb.appendChild(dv);
+  });
+  $('xpTip').textContent = '💡 ' + XC.tip;
+  $('ovOver').hidden = false;
+  hud();
+}
+
+/* ================= 图鉴 ================= */
+function drawTypeIcon(cv, typeKey, known) {
+  var g = cv.getContext('2d');
+  var key = TYPES[typeKey].imgAs || typeKey;
+  var rows = PIXELS[key];
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.fillStyle = known ? 'rgba(90,240,170,.95)' : 'rgba(90,240,170,.14)';
+  if (!rows) return;
+  var cell = Math.min(cv.width / 13, cv.height / rows.length);
+  var ox = (cv.width - 13 * cell) / 2, oy = (cv.height - rows.length * cell) / 2;
+  for (var y = 0; y < rows.length; y++) for (var x = 0; x < rows[y].length; x++) {
+    if (rows[y][x] === '#') g.fillRect(ox + x * cell, oy + y * cell, cell - 1, cell - 1);
+  }
+}
+function renderCodex() {
+  var box = $('codexList'); box.innerHTML = '';
+  var groups = [
+    { label: '固定翼 · 民航 / 运输 / 敌歼', keys: ['airliner', 'transport', 'fighter'] },
+    { label: '无人机 · 敌机 / 注册 / 黑飞', keys: ['uav', 'uav_reg', 'uav_dark'] },
+    { label: '直升机 · 民用 / 武装', keys: ['heli_civ', 'heli_mil'] },
+    { label: '校验失败 · 必须成像', keys: ['disguised', 'faulty'] }
+  ];
+  groups.forEach(function (grp) {
+    var lab = document.createElement('div');
+    lab.className = 'cx-grouplabel';
+    lab.textContent = grp.label;
+    box.appendChild(lab);
+    grp.keys.forEach(function (k) {
+      var T = TYPES[k];
+      if (!T) return;
+      var known = !!S.unlocked[T.imgAs || k];
+      var row = document.createElement('div');
+      row.className = 'cx' + (known ? '' : ' lock');
+      var cv = document.createElement('canvas');
+      cv.width = 78; cv.height = 44; cv.className = 'cx-icon';
+      drawTypeIcon(cv, k, known);
+      var tx = document.createElement('div'); tx.className = 'cx-tx';
+      tx.innerHTML = '<b>' + (known ? T.name : '？？？') + '</b><p>' +
+        (known ? (T.sci || '') + ' 线索：' + T.hint + '。' : '尚未识别。继续值班，或在成像中确认它。') + '</p>';
+      row.appendChild(cv); row.appendChild(tx);
+      box.appendChild(row);
+    });
+  });
+  var extra = document.createElement('div');
+  extra.className = 'cx';
+  extra.innerHTML = '<b>附：ISAR 成像原理</b><p>' + SCI_EXTRA.imaging + '</p>';
+  box.appendChild(extra);
+}
+
+/* ================= 横幅 ================= */
+function banner(txt) {
+  var b = document.createElement('div');
+  b.textContent = txt;
+  b.style.cssText = 'position:absolute;left:0;right:0;top:38%;text-align:center;font-size:26px;letter-spacing:8px;color:#5af0aa;text-shadow:0 0 14px #5af0aa88;font-family:inherit;pointer-events:none;transition:opacity 1s;z-index:5';
+  $('scopeWrap').appendChild(b);
+  setTimeout(function () { b.style.opacity = '0'; }, 900);
+  setTimeout(function () { b.remove(); }, 2000);
+}
+
+/* ================= 按钮 ================= */
+$('btnStart').addEventListener('click', function () {
+  beeper.ensure();
+  $('ovIntro').hidden = true;
+  startWave();
+});
+$('btnNextWave').addEventListener('click', function () {
+  $('ovWave').hidden = true; S.restT = 0;
+});
+$('btnRestart').addEventListener('click', restart);
+$('btnCodex').addEventListener('click', function () { renderCodex(); $('ovCodex').hidden = false; });
+$('btnCodexClose').addEventListener('click', function () { $('ovCodex').hidden = true; });
+$('btnMute').addEventListener('click', function () {
+  beeper.on = !beeper.on;
+  this.textContent = beeper.on ? '声音:开' : '声音:关';
+  this.setAttribute('aria-pressed', beeper.on ? 'false' : 'true');
+});
+function restart() {
+  $('ovOver').hidden = true; $('ovWave').hidden = true; $('ovImage').hidden = true;
+  IMG = null;
+  var un = S.unlocked, st = S.stats;
+  S = freshState();
+  S.unlocked = un;
+  $('log').innerHTML = '';
+  logLine('新班次上岗。哨所结构 3/3。');
+  hud();
+  startWave();
+}
+window.addEventListener('keydown', function (e) {
+  if (e.key === 'r' || e.key === 'R') { if (S.mode === 'over') restart(); return; }
+  if (e.key === 'Escape') { select(null); $('ovCodex').hidden = true; return; }
+  var map = { '1': 'release', '2': 'escort', '3': 'fire', '4': 'image' };
+  if (map[e.key] && S.sel) { e.preventDefault(); act(map[e.key]); }
+});
+
+/* ================= 测试钩子 ================= */
+window.__game = {
+  S: function () { return S; },
+  TYPES: TYPES,
+  posOf: function (t) {
+    var r = cv.getBoundingClientRect();
+    return { x: r.left + CX + t.x * R, y: r.top + CY + t.y * R };
+  }
+};
+
+/* ================= 主循环 ================= */
+logLine('系统自检完成。等待上岗。');
+hud();
+var last = performance.now();
+function loop(now) {
+  var dt = Math.min(0.05, (now - last) / 1000); last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+})();
+</script>
+<script>
+/* ============ 部署配置（上线前检查这一行） ============
+   aiKey：主办方提供的生图 Key，玩家无需输入。比赛 Key 10/25 19:00 失效；
+   赛后请清空此行或换成自己的长期 Key / 代理地址。玩家在本机填写的 Key 优先级更高。 */
+window.GAME_CONFIG = {
+  aiBase: 'https://api.openai-next.com/v1',
+  aiKey: 'sk-bxyDylcGiIoPfH8T0bEdDb4a21414555A443A9EaD327E4Da',
+  aiModel: 'gemini-nano-banana-2.1'
+};
+</script>
+<script>
+/* ================= 哨兵登记处 ================= */
+(function () {
+'use strict';
+var $ = function (id) { return document.getElementById(id); };
+window.__creatorOpen = true;
+
+/* ---------- AI 配置：玩家覆盖 > 部署内置 > 无 ---------- */
+var GAME_AI = window.GAME_CONFIG || {};
+function aiCfg() {
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem('fs_ai') || '{}'); } catch (e) {}
+  var keySrc = saved.key ? 'user' : (GAME_AI.aiKey ? 'builtin' : 'none');
+  return {
+    base: saved.base || GAME_AI.aiBase || 'https://api.openai-next.com/v1',
+    key: saved.key || GAME_AI.aiKey || '',
+    model: saved.model || GAME_AI.aiModel || 'gemini-nano-banana-2.1',
+    keySrc: keySrc
+  };
+}
+function aiCfgSaved() {
+  var a = aiCfg();
+  $('aiBase').value = a.base;
+  $('aiModel').value = a.model;
+  $('aiKey').value = a.keySrc === 'user' ? a.key : '';
+  $('aiKey').placeholder = a.keySrc === 'builtin' ? '主办方已内置 Key（可直接生成）' : 'sk-…';
+  return a;
+}
+function aiSave() {
+  var v = $('aiKey').value.trim();
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem('fs_ai') || '{}'); } catch (e) {}
+  saved.base = $('aiBase').value.trim() || undefined;
+  saved.model = $('aiModel').value.trim() || undefined;
+  if (v) saved.key = v; else delete saved.key; // 清空输入 = 回退部署内置
+  try { localStorage.setItem('fs_ai', JSON.stringify(saved)); } catch (e) {}
+  refreshAiState();
+}
+function refreshAiState() {
+  var a = aiCfg();
+  $('aiState').textContent = a.keySrc === 'builtin' ? ('主办方已提供 AI 生图 ✓ · ' + a.model)
+    : a.keySrc === 'user' ? ('AI 已配置 · ' + a.model)
+    : '未配置 Key → 内置画风';
+}
+
+/* ---------- 描述解析（内置画风回退） ---------- */
+function parseDesc(desc) {
+  desc = desc || '';
+  var d = desc.toLowerCase();
+  var cfg = { species: 'human', headCol: '#e8b57c', earCol: '#e8b57c', gear: null, accentCol: '#5af0aa' };
+  if (/熊猫/.test(desc)) { cfg.species = 'panda'; cfg.headCol = cfg.earCol = '#e8e4da'; }
+  else if (/猫|喵|咪/.test(d)) { cfg.species = 'cat'; }
+  else if (/狗|犬|柴|汪/.test(d)) { cfg.species = 'dog'; }
+  else if (/兔/.test(desc)) { cfg.species = 'rabbit'; }
+  else if (/机器人|机甲|ai|AI/.test(d)) { cfg.species = 'robot'; }
+  var colors = [['橘', '#eda055'], ['橙', '#f08a3c'], ['黄', '#e6b83c'], ['黑', '#3a3f4a'], ['白', '#ece7db'],
+    ['灰', '#9aa0a8'], ['棕', '#a4713f'], ['蓝', '#5a8fd6'], ['粉', '#e88fb0'], ['绿', '#5aa06a'], ['三花', '#eda055']];
+  for (var i = 0; i < colors.length; i++) {
+    if (desc.indexOf(colors[i][0]) >= 0) { cfg.headCol = colors[i][1]; break; }
+  }
+  cfg.earCol = cfg.headCol;
+  if (/头盔/.test(desc)) cfg.gear = 'helmet'; else if (/帽/.test(desc)) cfg.gear = 'cap';
+  return cfg;
+}
+
+/* ---------- 程序化正面形象（内置画风） ---------- */
+function drawChibi(cv, cfg) {
+  var g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  var cx = W / 2, hy = H * 0.46, hr = W * 0.26;
+  g.clearRect(0, 0, W, H);
+  var col = cfg.headCol, dk = shade(col, -36), lt = shade(col, 26);
+  // 身体
+  g.fillStyle = '#2e5340';
+  g.beginPath(); g.ellipse(cx, H * 0.86, W * 0.30, H * 0.16, 0, 0, 7); g.fill();
+  g.fillStyle = '#3d6350';
+  g.beginPath(); g.ellipse(cx, H * 0.84, W * 0.20, H * 0.12, 0, 0, 7); g.fill();
+  // 颈
+  g.fillStyle = shade(col, -30); g.fillRect(cx - W * 0.035, H * 0.68, W * 0.07, H * 0.06);
+  // 耳朵（在头后）
+  g.fillStyle = dk;
+  if (cfg.species === 'cat') {
+    tri(g, cx - hr * 0.75, hy - hr * 0.5, cx - hr * 0.95, hy - hr * 1.5, cx - hr * 0.1, hy - hr * 0.95);
+    tri(g, cx + hr * 0.75, hy - hr * 0.5, cx + hr * 0.95, hy - hr * 1.5, cx + hr * 0.1, hy - hr * 0.95);
+  } else if (cfg.species === 'dog') {
+    g.beginPath(); g.ellipse(cx - hr * 0.9, hy, hr * 0.32, hr * 0.62, 0.4, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(cx + hr * 0.9, hy, hr * 0.32, hr * 0.62, -0.4, 0, 7); g.fill();
+  } else if (cfg.species === 'rabbit') {
+    g.beginPath(); g.ellipse(cx - hr * 0.42, hy - hr * 1.5, hr * 0.24, hr * 0.82, -0.1, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(cx + hr * 0.42, hy - hr * 1.5, hr * 0.24, hr * 0.82, 0.1, 0, 7); g.fill();
+  } else if (cfg.species === 'panda') {
+    g.beginPath(); g.arc(cx - hr * 0.8, hy - hr * 0.72, hr * 0.38, 0, 7); g.fill();
+    g.beginPath(); g.arc(cx + hr * 0.8, hy - hr * 0.72, hr * 0.38, 0, 7); g.fill();
+  }
+  // 头
+  g.fillStyle = col; g.beginPath(); g.arc(cx, hy, hr, 0, 7); g.fill();
+  g.fillStyle = lt; g.beginPath(); g.arc(cx - hr * 0.3, hy - hr * 0.3, hr * 0.55, 0, 7); g.fill();
+  if (cfg.species === 'robot') {
+    g.fillStyle = col; rr(g, cx - hr * 0.82, hy - hr * 0.82, hr * 1.64, hr * 1.5, hr * 0.3); g.fill();
+    g.strokeStyle = '#0a5236'; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(cx, hy - hr * 0.85); g.lineTo(cx, hy - hr * 1.45); g.stroke();
+    g.fillStyle = '#e6a817'; g.beginPath(); g.arc(cx, hy - hr * 1.6, hr * 0.14, 0, 7); g.fill();
+  }
+  // 脸
+  g.fillStyle = '#22303a';
+  var blink = 1;
+  g.beginPath(); g.ellipse(cx - hr * 0.36, hy - hr * 0.05, hr * 0.1, hr * 0.15 * blink, 0, 0, 7);
+  g.ellipse(cx + hr * 0.36, hy - hr * 0.05, hr * 0.1, hr * 0.15 * blink, 0, 0, 7); g.fill();
+  g.beginPath(); g.arc(cx, hy + hr * 0.12, hr * 0.05, 0, 7); g.fill();
+  g.strokeStyle = '#22303a'; g.lineWidth = 2.4;
+  g.beginPath(); g.arc(cx, hy + hr * 0.08, hr * 0.16, 0.25, Math.PI - 0.25); g.stroke();
+  if (cfg.species === 'cat') {
+    g.beginPath(); g.moveTo(cx - hr * 0.5, hy + hr * 0.15); g.lineTo(cx - hr * 1.05, hy + hr * 0.05);
+    g.moveTo(cx - hr * 0.5, hy + hr * 0.24); g.lineTo(cx - hr * 1.05, hy + hr * 0.3);
+    g.moveTo(cx + hr * 0.5, hy + hr * 0.15); g.lineTo(cx + hr * 1.05, hy + hr * 0.05);
+    g.moveTo(cx + hr * 0.5, hy + hr * 0.24); g.lineTo(cx + hr * 1.05, hy + hr * 0.3); g.stroke();
+  }
+  // 耳麦（哨兵标配）
+  g.strokeStyle = '#0f2e20'; g.lineWidth = hr * 0.16;
+  g.beginPath(); g.arc(cx, hy, hr * 1.14, Math.PI * 1.16, Math.PI * 1.84); g.stroke();
+  g.fillStyle = '#153b28';
+  g.beginPath(); g.arc(cx - hr * 1.06, hy + hr * 0.1, hr * 0.3, 0, 7); g.fill();
+  g.beginPath(); g.arc(cx + hr * 1.06, hy + hr * 0.1, hr * 0.3, 0, 7); g.fill();
+  g.strokeStyle = cfg.accentCol; g.lineWidth = 2;
+  g.beginPath(); g.arc(cx - hr * 1.06, hy + hr * 0.1, hr * 0.3, 0, 7); g.stroke();
+  g.beginPath(); g.arc(cx + hr * 1.06, hy + hr * 0.1, hr * 0.3, 0, 7); g.stroke();
+  // 帽/头盔
+  if (cfg.gear === 'cap') {
+    g.fillStyle = '#3d6350';
+    g.beginPath(); g.arc(cx, hy - hr * 0.32, hr * 0.98, Math.PI * 1.04, Math.PI * 1.96); g.closePath(); g.fill();
+    g.beginPath(); g.ellipse(cx, hy - hr * 0.28, hr * 1.32, hr * 0.2, 0, 0, 7); g.fill();
+  } else if (cfg.gear === 'helmet') {
+    g.fillStyle = '#33544a';
+    g.beginPath(); g.arc(cx, hy - hr * 0.08, hr * 1.1, Math.PI, TAU); g.closePath(); g.fill();
+    g.fillRect(cx - hr * 1.1, hy - hr * 0.1, hr * 2.2, hr * 0.16);
+  }
+}
+function tri(g, x1, y1, x2, y2, x3, y3) { g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.lineTo(x3, y3); g.closePath(); g.fill(); }
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) { g.roundRect(x, y, w, h, r); } else { g.rect(x, y, w, h); } }
+var TAU = Math.PI * 2;
+function shade(hex, amt) {
+  var n = parseInt(hex.slice(1), 16), r = (n >> 16) + amt, gg = ((n >> 8) & 255) + amt, b = (n & 255) + amt;
+  return 'rgb(' + Math.max(0, Math.min(255, r)) + ',' + Math.max(0, Math.min(255, gg)) + ',' + Math.max(0, Math.min(255, b)) + ')';
+}
+
+/* ---------- 照片本地风格化（磷光哨兵风） ---------- */
+function stylizePhoto(dataUrl, cb) {
+  var im = new Image();
+  im.onload = function () {
+    var cv = document.createElement('canvas'); cv.width = 320; cv.height = 320;
+    var g = cv.getContext('2d');
+    var sc = Math.max(320 / im.width, 320 / im.height);
+    var w = im.width * sc, h = im.height * sc;
+    g.filter = 'saturate(1.08) contrast(1.05)';
+    g.drawImage(im, (320 - w) / 2, (320 - h) / 2, w, h);
+    g.filter = 'none';
+    g.globalCompositeOperation = 'soft-light';
+    g.fillStyle = '#ffd9a8'; g.globalAlpha = 0.3; g.fillRect(0, 0, 320, 320);
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+    cb(cv.toDataURL('image/jpeg', 0.85));
+  };
+  im.src = dataUrl;
+}
+
+/* ---------- AI 调用 ---------- */
+function status(t) { $('crStatus').textContent = t; }
+function buildPrompt(desc) {
+  return 'collectible game card character portrait: ' + (desc || 'a cute orange cat') +
+    '. chibi radar sentry, wearing tactical headset with small antenna, confident friendly expression, ' +
+    'flat vector style with clean bold shapes and simple shading, ' +
+    'WARM cozy color palette, soft warm lighting, cheerful and inviting mood, warm cream and peach tones, ' +
+    'absolutely NO green tint on the character, ' +
+    'the background MUST be one flat solid pure magenta color (#FF00FF) everywhere behind the character, ' +
+    'full character visible with clear margin around it, no shadow on the background, ' +
+    'centered composition, no text, no border, no watermark';
+}
+function aiT2I(prompt, cfg) {
+  return fetch(cfg.base + '/images/generations', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + cfg.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: cfg.model, prompt: prompt, n: 1, size: '1024x1024' })
+  }).then(function (r) {
+    if (!r.ok) return r.text().then(function (t) { throw new Error('HTTP ' + r.status + ' ' + t.slice(0, 80)); });
+    return r.json();
+  }).then(function (j) {
+    var d = j.data[0];
+    return d.b64_json ? 'data:image/png;base64,' + d.b64_json : d.url;
+  });
+}
+function aiI2I(prompt, photoDataUrl, cfg) {
+  return fetch(photoDataUrl).then(function (r) { return r.blob(); }).then(function (blob) {
+    var fd = new FormData();
+    fd.append('image', blob, 'photo.png');
+    fd.append('prompt', prompt);
+    fd.append('model', cfg.model);
+    fd.append('n', '1');
+    fd.append('size', '1024x1024');
+    return fetch(cfg.base + '/images/edits', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + cfg.key }, body: fd
+    });
+  }).then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function (j) {
+    var d = j.data[0];
+    return d.b64_json ? 'data:image/png;base64,' + d.b64_json : d.url;
+  });
+}
+function downscale(dataUrl, max, cb) {
+  var im = new Image();
+  im.onload = function () {
+    var sc = Math.min(1, max / Math.max(im.width, im.height));
+    var cv = document.createElement('canvas');
+    cv.width = Math.round(im.width * sc); cv.height = Math.round(im.height * sc);
+    cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+    cb(cv.toDataURL('image/jpeg', 0.8));
+  };
+  im.src = dataUrl;
+}
+
+/* ---------- 色键抠图：人物从品红底里剪出来 ---------- */
+function cutout(im) {
+  var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height;
+  var sc = Math.min(1, 768 / Math.max(w, h));
+  w = Math.max(1, Math.round(w * sc)); h = Math.max(1, Math.round(h * sc));
+  var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  var g = cv.getContext('2d');
+  g.drawImage(im, 0, 0, w, h);
+  var id;
+  try { id = g.getImageData(0, 0, w, h); } catch (e) { return null; }
+  var d = id.data;
+  function mag(i) {
+    var r = d[i], gg = d[i + 1], b = d[i + 2];
+    return r > 100 && b > 100 && gg < Math.min(r, b) * 0.62 && (r - gg) + (b - gg) > 100;
+  }
+  var total = w * h;
+  var seen = new Uint8Array(total);
+  var queue = new Int32Array(total);
+  var qh = 0, qt = 0;
+  function tryPush(k) { if (!seen[k] && mag(k * 4)) { seen[k] = 1; queue[qt++] = k; } }
+  for (var x = 0; x < w; x++) { tryPush(x); tryPush((h - 1) * w + x); }
+  for (var y2 = 0; y2 < h; y2++) { tryPush(y2 * w); tryPush(y2 * w + w - 1); }
+  var removed = 0;
+  while (qh < qt) {
+    var k = queue[qh++];
+    removed++;
+    d[k * 4 + 3] = 0;
+    var kx = k % w, ky = (k / w) | 0;
+    if (kx > 0) tryPush(k - 1);
+    if (kx < w - 1) tryPush(k + 1);
+    if (ky > 0) tryPush(k - w);
+    if (ky < h - 1) tryPush(k + w);
+  }
+  var ratio = removed / total;
+  if (ratio < 0.04 || ratio > 0.96) return null; // 底色不像品红/抠太多 → 放弃
+  // 边缘软化：紧邻透明区的像素降 alpha
+  var soften = [];
+  for (var k2 = 0; k2 < total; k2++) {
+    if (seen[k2] || d[k2 * 4 + 3] === 0) continue;
+    var kx2 = k2 % w, ky2 = (k2 / w) | 0;
+    var near = (kx2 > 0 && seen[k2 - 1] === 0 && d[(k2 - 1) * 4 + 3] === 0) ||
+               (kx2 < w - 1 && seen[k2 + 1] === 0 && d[(k2 + 1) * 4 + 3] === 0) ||
+               (ky2 > 0 && seen[k2 - w] === 0 && d[(k2 - w) * 4 + 3] === 0) ||
+               (ky2 < h - 1 && seen[k2 + w] === 0 && d[(k2 + w) * 4 + 3] === 0);
+    if (near) soften.push(k2);
+  }
+  for (var s3 = 0; s3 < soften.length; s3++) d[soften[s3] * 4 + 3] = Math.floor(d[soften[s3] * 4 + 3] * 0.4);
+  g.putImageData(id, 0, 0);
+  return cv;
+}
+function throughCutout(dataUrl, cb) {
+  var im = new Image();
+  im.onload = function () {
+    // 已是透明素材（内置画风）→ 直接用
+    var tcv = document.createElement('canvas'); tcv.width = 24; tcv.height = 24;
+    var tg = tcv.getContext('2d');
+    tg.drawImage(im, 0, 0, 24, 24);
+    var bd = tg.getImageData(0, 0, 24, 24).data;
+    var per = 0, tr = 0;
+    for (var i = 0; i < 24; i++) for (var j = 0; j < 24; j++) {
+      if (i === 0 || j === 0 || i === 23 || j === 23) {
+        per++;
+        if (bd[(j * 24 + i) * 4 + 3] < 20) tr++;
+      }
+    }
+    if (per > 0 && tr / per > 0.55) { cb(dataUrl, false); return; }
+    var c = cutout(im);
+    if (c) cb(c.toDataURL('image/png'), false);
+    else cb(dataUrl, true); // 抠图失败 → 保留原图 + 边缘羽化
+  };
+  im.onerror = function () { cb(dataUrl, true); };
+  im.src = dataUrl;
+}
+
+/* ---------- 全息卡组装 ---------- */
+var hero = null; // {img, cfg, name, no}
+function drawRadarBg(cv, sweep) {
+  var g = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W / 2, cy = H * 0.44;
+  g.fillStyle = '#04120c'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(60,180,120,.30)'; g.lineWidth = 1;
+  for (var i = 1; i <= 4; i++) { g.beginPath(); g.arc(cx, cy, W * 0.12 * i, 0, 7); g.stroke(); }
+  g.beginPath(); g.moveTo(cx - W * 0.5, cy); g.lineTo(cx + W * 0.5, cy);
+  g.moveTo(cx, cy - H * 0.5); g.lineTo(cx, cy + H * 0.5); g.stroke();
+  for (var a = 0; a < 12; a++) {
+    var an = a * Math.PI / 6;
+    g.fillStyle = 'rgba(63,156,110,.7)'; g.font = '8px monospace';
+    g.fillText(('0' + a * 30).slice(-3), cx + Math.cos(an) * W * 0.44 - 8, cy + Math.sin(an) * W * 0.44 + 3);
+  }
+  if (sweep !== undefined) {
+    for (var s4 = 0; s4 < 26; s4++) {
+      var a0 = sweep - s4 * 0.05;
+      g.fillStyle = 'rgba(90,240,170,' + (0.14 * (1 - s4 / 26)).toFixed(3) + ')';
+      g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, W * 0.5, a0 - 0.06, a0); g.closePath(); g.fill();
+    }
+    g.strokeStyle = 'rgba(154,255,204,.8)'; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(sweep) * W * 0.5, cy + Math.sin(sweep) * W * 0.5); g.stroke();
+    g.fillStyle = '#5af0aa'; g.beginPath(); g.arc(cx, cy, 3, 0, 7); g.fill();
+  }
+  var grad = g.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, 'rgba(90,240,170,.10)'); grad.addColorStop(1, 'rgba(0,0,0,.35)');
+  g.fillStyle = grad; g.fillRect(0, 0, W, H);
+}
+var subImg = null;
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+function computeFocal(img) {
+  try { // 自动定焦：非透明像素包围盒中心 + 包围盒适配缩放
+    var cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+    var g = cv.getContext('2d');
+    g.drawImage(img, 0, 0, 64, 64);
+    var d = g.getImageData(0, 0, 64, 64).data;
+    var minX = 64, minY = 64, maxX = -1, maxY = -1, n = 0, sx = 0, sy = 0;
+    for (var y = 0; y < 64; y++) for (var x = 0; x < 64; x++) {
+      if (d[(y * 64 + x) * 4 + 3] > 40) {
+        n++; sx += x; sy += y;
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      }
+    }
+    if (n < 30) return { x: 0.5, y: 0.45, zoom: 1 };
+    var bw = (maxX - minX + 1) / 64, bh = (maxY - minY + 1) / 64;
+    if (bw > 0.95 && bh > 0.95) return { x: 0.5, y: 0.45, zoom: 1 }; // 全幅不透明（照片）
+    var zoom = Math.max(1, Math.min(2.4, 1.4 / Math.max(bw, bh, 0.4)));
+    return { x: (sx / n) / 64, y: (sy / n) / 64, zoom: zoom };
+  } catch (e) { return { x: 0.5, y: 0.45, zoom: 1 }; }
+}
+function drawSub(cv, img, fade) {
+  subImg = img;
+  if (!hero.crop) hero.crop = computeFocal(img);
+  var crop = hero.crop;
+  var g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  // 暖色奶油衬板（圆）
+  var plate = g.createRadialGradient(W / 2, H * 0.40, W * 0.10, W / 2, H * 0.42, W * 0.52);
+  plate.addColorStop(0, 'rgba(251,244,231,0.99)');
+  plate.addColorStop(0.66, 'rgba(247,233,209,0.95)');
+  plate.addColorStop(1, 'rgba(247,233,209,0)');
+  g.fillStyle = plate;
+  g.beginPath(); g.arc(W / 2, H * 0.42, W * 0.52, 0, 7); g.fill();
+  // 同心圆裁剪主体（图像按 cover 填满圆，焦点对准圆心）
+  var Rs = W * 0.44, ccx = W / 2, ccy = H * 0.42;
+  var zoom = crop.zoom || 1;
+  var base = Math.max(2 * Rs / img.width, 2 * Rs / img.height) * zoom;
+  var w = img.width * base, h = img.height * base;
+  var dx = ccx - crop.x * w, dy = ccy - crop.y * h;
+  dx = Math.max(ccx + Rs - w, Math.min(ccx - Rs, dx));
+  dy = Math.max(ccy + Rs - h, Math.min(ccy - Rs, dy));
+  g.save();
+  g.beginPath(); g.arc(ccx, ccy, Rs, 0, TAU); g.clip();
+  g.drawImage(img, dx, dy, w, h);
+  var vin = g.createRadialGradient(ccx, ccy, Rs * 0.6, ccx, ccy, Rs);
+  vin.addColorStop(0, 'rgba(30,22,10,0)');
+  vin.addColorStop(1, 'rgba(30,22,10,.16)');
+  g.fillStyle = vin; g.fillRect(ccx - Rs, ccy - Rs, Rs * 2, Rs * 2);
+  g.restore();
+  // 暖色圆环：让圆像"坐"在衬板上
+  g.strokeStyle = 'rgba(206,178,136,.85)'; g.lineWidth = W * 0.012;
+  g.beginPath(); g.arc(ccx, ccy, Rs, 0, TAU); g.stroke();
+}
+function extractPalette(im) {
+  try {
+    var cv = document.createElement('canvas'); cv.width = 32; cv.height = 32;
+    var g = cv.getContext('2d');
+    g.drawImage(im, 0, 0, 32, 32);
+    var d = g.getImageData(0, 0, 32, 32).data;
+    var buckets = {}, best = null, bestN = 0;
+    for (var i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 120) continue;
+      var r = d[i], gg = d[i + 1], b = d[i + 2];
+      var mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+      if (mx < 40 || mx - mn < 26) continue;
+      var hue;
+      if (mx === r) hue = (60 * ((gg - b) / (mx - mn)) + 360) % 360;
+      else if (mx === gg) hue = 60 * ((b - r) / (mx - mn)) + 120;
+      else hue = 60 * ((r - gg) / (mx - mn)) + 240;
+      var key = Math.round(hue / 20);
+      if (!buckets[key]) buckets[key] = { n: 0, r: 0, g: 0, b: 0 };
+      var bk = buckets[key]; bk.n++; bk.r += r; bk.g += gg; bk.b += b;
+      if (bk.n > bestN) { bestN = bk.n; best = bk; }
+    }
+    if (!best || bestN < 14) return null;
+    return 'rgb(' + Math.round(best.r / best.n) + ',' + Math.round(best.g / best.n) + ',' + Math.round(best.b / best.n) + ')';
+  } catch (e) { return null; }
+}
+function syncGameHero() {
+  var c = (hero && hero.cfg) || {};
+  window.__heroCfg = {
+    headCol: c.headCol,
+    earCol: c.earCol || null,
+    species: c.species || 'human',
+    gear: c.gear,
+    uniCol: (hero && hero.uniCol) || '#25402f',
+    accentCol: '#5af0aa'
+  };
+}
+function setHero(cfg) {
+  hero = cfg;
+  window.__hero = hero;
+  var im = new Image();
+  im.onload = function () {
+    if (!(hero.cfg && hero.cfg.headCol)) {
+      var dom = extractPalette(im);
+      if (dom) {
+        if (!hero.cfg) hero.cfg = {};
+        if (hero.cfg.species !== 'human') hero.cfg.headCol = dom;
+      }
+    }
+    syncGameHero();
+    // 旧版不透明卡迁移：自动尝试抠图并回存（透明素材在此快速跳过）
+    throughCutout(cfg.img, function (finalUrl, faded) {
+      if (finalUrl !== hero.img || hero.fade !== faded) {
+        hero.img = finalUrl; hero.fade = faded;
+        try { localStorage.setItem('fs_hero', JSON.stringify(hero)); } catch (e) {}
+      }
+      var im2 = new Image();
+      im2.onload = function () { drawSub($('cardSub'), im2, faded); };
+      im2.src = finalUrl;
+    });
+  };
+  im.src = cfg.img;
+  $('cardName').textContent = cfg.name;
+  $('cardNo').textContent = cfg.no;
+  syncGameHero();
+  drawRadarBg($('cardBg'));
+  drawBack($('cardBack'));
+  $('holoStage').hidden = false;
+  $('btnOnDuty').hidden = false;
+  $('cropRow').hidden = false;
+  if (!foilRAF) foilRAF = requestAnimationFrame(foilLoop);
+}
+function drawBack(cv) {
+  var g = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W / 2, cy = H * 0.34;
+  g.fillStyle = '#04120c'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(60,180,120,.35)'; g.lineWidth = 1;
+  for (var i = 1; i <= 4; i++) { g.beginPath(); g.arc(cx, cy, W * 0.11 * i, 0, 7); g.stroke(); }
+  var ang = (Date.now() / 3000) % (Math.PI * 2);
+  g.strokeStyle = 'rgba(120,255,190,.6)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(ang) * W * 0.42, cy + Math.sin(ang) * W * 0.42); g.stroke();
+  g.fillStyle = '#5af0aa'; g.beginPath(); g.arc(cx, cy, 3, 0, 7); g.fill();
+}
+
+/* ---------- 镭射 + 星光（移植 holo-card-studio 光学公式） ---------- */
+var foilRAF = null, view = { x: 0, y: 0 };
+function hash(x, y) { var v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return v - Math.floor(v); }
+function vnoise(x, y) {
+  var ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+  fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+  var a = hash(ix, iy), b = hash(ix + 1, iy), c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1);
+  return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+}
+function spectrum(t) {
+  t = t - Math.floor(t);
+  var pink = [1, 0.32, 0.62], yellow = [1, 0.85, 0.32], blue = [0.22, 0.62, 1], w = [1, 1, 1];
+  function mix(a, b, k) { return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
+  if (t < 0.35) return mix(pink, yellow, t / 0.35);
+  if (t < 0.7) return mix(yellow, blue, (t - 0.35) / 0.35);
+  return mix(blue, w, (t - 0.7) / 0.3);
+}
+function drawFoil() {
+  var cv = $('cardFoil'), g = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var img = g.createImageData(W, H);
+  var d = img.data, t = performance.now() / 1000;
+  var vx = cur.ry / 13, vy = cur.rx / 10;
+  for (var y = 0; y < H; y++) {
+    for (var x = 0; x < W; x++) {
+      var px = (x + 0.5) / W, py = (y + 0.5) / H;
+      var ax = px + vx * 2.4, ay = py + vy * 2.4;
+      var wv = 0.5 + 0.5 * Math.sin((ax * 0.848 - ay * 0.530) * 6.283 * 0.55 + 7 * vnoise(ax * 1.5, ay * 1.5));
+      var col = spectrum(wv * 0.8 + vnoise(px * 5, py * 5) * 0.12);
+      // 星光（粗化沃罗诺伊）
+      var q = px * 46, r = py * 61;
+      var qx = Math.floor(q), ry = Math.floor(r), fx = q - qx, fy = r - ry;
+      var first = 9, second = 9;
+      for (var yy = -1; yy <= 1; yy++) for (var xx = -1; xx <= 1; xx++) {
+        var ox = hash(qx + xx, ry + yy), oy = hash(qx + xx + 43.3, ry + yy);
+        var dd = Math.sqrt((xx + ox - fx) * (xx + ox - fx) + (yy + oy - fy) * (yy + oy - fy));
+        if (dd < first) { second = first; first = dd; } else if (dd < second) second = dd;
+      }
+      var edge = 1 - Math.min(1, Math.max(0, (second - first - 0.01) / 0.025));
+      var sparse = hash(qx + 8.8, ry) > 0.90 ? 1 : 0;
+      var tw = Math.pow(0.5 + 0.5 * Math.sin(t * 1.8 + hash(qx, ry) * 30 + vx * 27 + vy * 21), 6);
+      var star = edge * sparse * tw;
+      var idx = (y * W + x) * 4;
+      var band = wv * wv * 0.55;
+      d[idx] = Math.min(255, 255 * (col[0] * band + star));
+      d[idx + 1] = Math.min(255, 255 * (col[1] * band + star));
+      d[idx + 2] = Math.min(255, 255 * (col[2] * band + star));
+      d[idx + 3] = Math.min(255, 255 * (band * 0.85 + star));
+    }
+  }
+  g.putImageData(img, 0, 0);
+}
+function foilLoop() {
+  if (window.__creatorOpen && !$('holoStage').hidden) {
+    var bg = $('cardBg');
+    if (bg) drawRadarBg(bg, (performance.now() / 4200) % TAU);
+    drawFoil();
+    tiltStep();
+  }
+  foilRAF = requestAnimationFrame(foilLoop);
+}
+function tiltStep() {
+  var card = $('holoCard');
+  cur.rx += (tgt.rx - cur.rx) * 0.14;
+  cur.ry += (tgt.ry - cur.ry) * 0.14;
+  card.style.transform = 'rotateX(' + cur.rx.toFixed(2) + 'deg) rotateY(' + (cur.ry + flipDeg).toFixed(2) + 'deg)';
+  // 分层视差：view 归一化 ±1，深度越大位移越大（主体 ≈ 背景的 2.6 倍）
+  var vx = cur.ry / 13, vy = cur.rx / 10;
+  var bg = document.querySelector('.hl-bg'), sub = document.querySelector('.hl-sub'),
+      foil = document.querySelector('.hl-foil'), txt = document.querySelector('.hl-text');
+  if (bg)   bg.style.transform   = 'translate(' + (-vx * 6).toFixed(2) + 'px,' + (-vy * 4).toFixed(2) + 'px)';
+  if (sub)  sub.style.transform  = 'translate(' + (vx * 24).toFixed(2) + 'px,' + (vy * 17).toFixed(2) + 'px)';
+  if (foil) foil.style.transform = 'translate(' + (vx * 26).toFixed(2) + 'px,' + (vy * 19).toFixed(2) + 'px)';
+  if (txt)  txt.style.transform  = 'translate(' + (vx * 30).toFixed(2) + 'px,' + (vy * 22).toFixed(2) + 'px)';
+}
+var tgt = { rx: 0, ry: 0 }, cur = { rx: 0, ry: 0 }, flipDeg = 0, drag = null;
+function bindTilt() {
+  var zone = $('holoTilt');
+  zone.addEventListener('pointerdown', function (e) {
+    drag = { x: e.clientX, y: e.clientY, moved: 0 };
+    zone.setPointerCapture && zone.setPointerCapture(e.pointerId);
+  });
+  zone.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy));
+    if (cropMode) { // 平移头像裁剪区
+      if (!subImg || !hero.crop) return;
+      var rect0 = zone.getBoundingClientRect();
+      var Rs0 = 300 * 0.44, zoom0 = hero.crop.zoom || 1;
+      var base0 = Math.max(2 * Rs0 / subImg.width, 2 * Rs0 / subImg.height) * zoom0;
+      hero.crop.x = clamp01(hero.crop.x - (dx * (300 / rect0.width)) / (base0 * subImg.width));
+      hero.crop.y = clamp01(hero.crop.y - (dy * (300 / rect0.height)) / (base0 * subImg.height));
+      window.__hero = hero;
+      drag.x = e.clientX; drag.y = e.clientY;
+      drawSub($('cardSub'), subImg, hero.fade);
+      return;
+    }
+    var rect = zone.getBoundingClientRect();
+    tgt.ry = ((e.clientX - rect.left) / rect.width - 0.5) * 26;
+    tgt.rx = -((e.clientY - rect.top) / rect.height - 0.5) * 20;
+  });
+  zone.addEventListener('pointerup', function (e) {
+    if (cropMode) { drag = null; return; }
+    if (drag && drag.moved < 7) { flipDeg += 180; $('holoCard').classList.add('flipped'); setTimeout(function () { $('holoCard').classList.remove('flipped'); }, 550); }
+    drag = null;
+  });
+  zone.addEventListener('pointercancel', function () { drag = null; });
+}
+
+/* ---------- 生成流程 ---------- */
+var photoData = null;
+function currentDesc() { return ($('crDesc').value || '').trim(); }
+var GEN_CAP = 6;
+function doGenerate() {
+  var cfg = aiCfgSaved();
+  var isPhoto = !$('crPhotoPane').hidden && photoData;
+  var desc = currentDesc();
+  if (!isPhoto && !desc) { status('先上传照片，或写一句描述'); return; }
+  var used = +(localStorage.getItem('fs_gen') || 0);
+  if (cfg.key && used >= GEN_CAP) {
+    status('本浏览器 AI 生图次数已用完（保护活动额度）。仍可用内置画风，或点「跳过」用上次的哨兵。');
+    return;
+  }
+  $('btnGenCard').disabled = true;
+  var name = (desc.match(/熊猫|橘猫|柴犬|机器人|直升机|小猫|猫|狗|犬|兔/) || ['小哨'])[0];
+  var no = 'NO.1024-' + String(10 + Math.floor(Math.random() * 90));
+  function finish(img, parsedCfg) {
+    throughCutout(img, function (finalUrl, faded) {
+      hero = { img: finalUrl, name: name, no: no, cfg: parsedCfg || parseDesc(desc), uniCol: '#25402f', fade: faded };
+      setHero(hero);
+      var left = GEN_CAP - (used + 1);
+      status('生成完成 ✓ 剩余 AI 生图次数 ' + Math.max(0, left) + '（内置画风不限）');
+      try { localStorage.setItem('fs_gen', String(used + 1)); } catch (e) {}
+      $('btnGenCard').disabled = false;
+    });
+  }
+  if (cfg.key) {
+    status('AI 生成中…（约 10-20 秒）');
+    if (isPhoto) {
+      aiI2I(buildPrompt(desc || 'transform this photo into a chibi radar sentry'), photoData, cfg)
+        .then(function (img) { finish(img, parseDesc(desc)); })
+        .catch(function (e) {
+          status('图生图不可用（' + String(e.message).slice(0, 60) + '）→ 本地磷光风格化');
+          stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }); });
+        });
+    } else {
+      aiT2I(buildPrompt(desc), cfg)
+        .then(function (img) { finish(img, parseDesc(desc)); })
+        .catch(function (e) {
+          status('AI 生图失败（' + String(e.message).slice(0, 60) + '）→ 内置画风');
+          var pc = parseDesc(desc);
+          var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
+          drawChibi(cv, pc);
+          finish(cv.toDataURL('image/png'), pc);
+        });
+    }
+  } else {
+    status('内置画风生成中…');
+    setTimeout(function () {
+      if (isPhoto) {
+        stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }); });
+      } else {
+        var pc = parseDesc(desc);
+        var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
+        drawChibi(cv, pc);
+        finish(cv.toDataURL('image/png'), pc);
+      }
+    }, 120);
+  }
+}
+
+/* ---------- 事件绑定 ---------- */
+function bind(id, fn) { var el = $(id); if (el) el.addEventListener('click', fn); }
+bind('tabPhoto', function () {
+  $('tabPhoto').classList.add('on'); $('tabText').classList.remove('on');
+  $('crPhotoPane').hidden = false; $('crTextPane').hidden = true;
+});
+bind('tabText', function () {
+  $('tabText').classList.add('on'); $('tabPhoto').classList.remove('on');
+  $('crTextPane').hidden = false; $('crPhotoPane').hidden = true;
+});
+bind('btnAiCfg', function () { $('crAiCfg').hidden = !$('crAiCfg').hidden; });
+['aiBase', 'aiKey', 'aiModel'].forEach(function (id) {
+  var el = $(id); if (el) el.addEventListener('change', aiSave);
+});
+var fileEl = $('crFile');
+if (fileEl) fileEl.addEventListener('change', function () {
+  var f = fileEl.files && fileEl.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () {
+    downscale(rd.result, 320, function (small) {
+      photoData = small;
+      var pv = $('crPhotoPrev'); pv.hidden = false;
+      pv.innerHTML = '<img alt="照片预览">';
+      pv.querySelector('img').src = small;
+      status('照片已就绪 ✓ 点「生成全息哨兵卡」');
+    });
+  };
+  rd.readAsDataURL(f);
+});
+var chips = $('crChips');
+if (chips) chips.addEventListener('click', function (e) {
+  if (e.target.tagName === 'BUTTON') {
+    $('crDesc').value = e.target.textContent;
+    if ($('crTextPane').hidden) $('tabText').click();
+  }
+});
+bind('btnGenCard', doGenerate);
+bind('btnSkip', function () {
+  var pc = parseDesc('橘猫 戴渔夫帽');
+  var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
+  drawChibi(cv, pc);
+  setHero({ img: cv.toDataURL('image/png'), name: '小哨', no: 'NO.1024-01', cfg: pc, uniCol: '#25402f' });
+  status('默认哨兵「小哨」已就位');
+  try { localStorage.setItem('fs_hero', JSON.stringify(hero)); } catch (e) {}
+  window.__creatorOpen = false;
+  $('ovCreator').hidden = true;
+  $('ovIntro').hidden = false;
+});
+bind('btnOnDuty', function () {
+  if (!hero) return;
+  try { localStorage.setItem('fs_hero', JSON.stringify(hero)); } catch (e) {}
+  applyHeroToGame(hero);
+  window.__creatorOpen = false;
+  $('ovCreator').hidden = true;
+  $('ovIntro').hidden = false;
+});
+bind('btnHero', function () {
+  window.__creatorOpen = true;
+  $('ovCreator').hidden = false;
+  status('');
+});
+bind('btnCropMode', function () {
+  if (!hero) return;
+  if (!hero.crop) hero.crop = subImg ? computeFocal(subImg) : { x: 0.5, y: 0.45, zoom: 1 };
+  cropMode = true;
+  $('crZoom').value = String(hero.crop.zoom || 1);
+  $('crZoomWrap').hidden = false;
+  $('btnCropMode').hidden = true;
+  $('holoHint').textContent = '拖动卡片调整头像位置 · 缩放后点「完成」';
+});
+bind('btnCropDone', function () {
+  cropMode = false;
+  $('crZoomWrap').hidden = true;
+  $('btnCropMode').hidden = false;
+  $('holoHint').textContent = '拖动转视角 · 点卡片翻面 · 镭射随角度流动';
+  if (hero) { try { localStorage.setItem('fs_hero', JSON.stringify(hero)); } catch (e) {} }
+});
+bind('crZoom', function () {
+  if (hero && hero.crop) { hero.crop.zoom = parseFloat($('crZoom').value); drawSub($('cardSub'), subImg, hero.fade); }
+});
+
+/* ---------- 应用到游戏 ---------- */
+function applyHeroToGame(h) {
+  hero = h;
+  var im = new Image();
+  im.onload = function () {
+    if (!(h.cfg && h.cfg.headCol)) {
+      var dom = extractPalette(im);
+      if (dom) {
+        if (!h.cfg) h.cfg = {};
+        if (h.cfg.species !== 'human') h.cfg.headCol = dom;
+      }
+    }
+    syncGameHero();
+  };
+  im.onerror = function () { syncGameHero(); };
+  im.src = h.img;
+  syncGameHero();
+}
+
+/* ---------- 启动 ---------- */
+aiCfgSaved(); refreshAiState();
+var cropMode = false;
+bindTilt();
+foilRAF = requestAnimationFrame(foilLoop);
+// 默认小哨（未登记时游戏里也有形象）
+(function () {
+  var pc = parseDesc('橘猫 戴渔夫帽');
+  var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
+  drawChibi(cv, pc);
+  applyHeroToGame({ img: cv.toDataURL('image/png'), cfg: pc, uniCol: '#25402f' });
+})();
+// 上次登记过的：直接恢复卡片
+try {
+  var saved = JSON.parse(localStorage.getItem('fs_hero') || 'null');
+  if (saved && saved.img) {
+    setHero(saved);
+    status('已加载上次的哨兵卡 ✓ 点「带 TA 上岗」直接开始');
+  }
+} catch (e) {}
+})();
+
+</script>
+</body>
+</html>
