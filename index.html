@@ -159,7 +159,14 @@ footer { font-size: 11px; color: var(--dim); padding: 0 14px 16px; max-width: 96
 @media (max-width: 700px) {
   main { flex-direction: column; }
   #scopeWrap { width: 100%; }
-  #idcard { position: sticky; top: 6px; z-index: 10; box-shadow: 0 0 0 3px var(--bg); }
+  #idcard {
+    position: fixed; left: 6px; right: 6px; bottom: 6px; z-index: 15; margin: 0;
+    box-shadow: 0 -6px 22px rgba(0,0,0,.6), 0 0 0 3px var(--bg);
+  }
+  #idcard .row { padding: 1px 0; }
+  #acts { margin-top: 6px; gap: 6px; }
+  #acts button { padding: 10px 4px; }
+  #idcard .tip { display: none; }
 }
 /* ===== 哨兵登记处 + 全息闪卡 ===== */
 .creator { width: 100%; max-width: 440px; }
@@ -266,7 +273,7 @@ footer { font-size: 11px; color: var(--dim); padding: 0 14px 16px; max-width: 96
     <p>你是哨所雷达兵「小哨」。屏上每个光点都要在飞进内圈前分清身份：</p>
     <ol>
       <li><b style="color:var(--pri)">点光点</b> → 看三条线索：回波强度、运动特征、应答斑</li>
-      <li>按身份处置：<b style="color:var(--pale)">白斑民航→放行</b> · <b style="color:var(--pri)">绿斑友军→引导</b> · <b>无斑/琥珀→查！多半要拦</b></li>
+      <li>按身份处置：<b style="color:var(--pale)">白斑民航→放行</b> · <b style="color:var(--pri)">绿斑友军→引导</b> · <b style="color:var(--amber); background:rgba(230,168,23,.16); padding:1px 6px; border-radius:5px">无斑/琥珀→查！多半要拦</b></li>
       <li>敌机飞进内圈扣1点哨所结构；<b style="color:var(--red)">误伤民航直接结束值班</b></li>
       <li>私人无人机（第3波起）：白斑=已注册合规→放行；原地悬停无广播=黑飞→拦截反制（放任会被罚）</li>
       <li>旋翼目标（第6波起）：光点一闪一闪＝直升机。白斑民用→放行；无斑低速逼近＝武装→拦截</li>
@@ -665,7 +672,6 @@ function select(t) {
   beeper.pick();
   var T = TYPES[t.type];
   card.hidden = false;
-  if (window.matchMedia('(max-width: 700px)').matches && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   $('idTitle').textContent = '目标 ' + t.id.toUpperCase() + ' · 识别';
   var spd = Math.sqrt(t.vx * t.vx + t.vy * t.vy);
   $('fRcs').textContent = T.rcs + '回波 ' + '▮'.repeat(T.rcs === '大' ? 4 : T.rcs === '中' ? 3 : 2) + '▮'.repeat(T.rcs === '大' ? 0 : T.rcs === '中' ? 0 : 0);
