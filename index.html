@@ -2291,20 +2291,20 @@ function doGenerate() {
       withRetry(function () { return aiI2I(buildPrompt(desc || 'transform this photo into a chibi radar sentry'), photoData, cfg); }, retryNote)
         .then(function (img) { finish(img, parseDesc(desc)); })
         .catch(function (e) {
-          status('✗ 图生图不可用（' + String(e.message).slice(0, 52) + '）已自动重试仍失败 → 先用本地风格化，可稍后再点生成重试');
-          var st = $('crStatus'); st.style.color = 'var(--amber)';
-          stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }); });
+          var warn = '⚠️ 图生图不可用（' + String(e.message).slice(0, 46) + '），已自动重试仍失败 → 本局先用本地风格化；稍后再点「生成」可重试 AI';
+          stylizePhoto(photoData, function (img) { finish(img, { headCol: '#b9d9c6', ears: null, gear: null }); status(warn); });
         });
     } else {
       withRetry(function () { return aiT2I(buildPrompt(desc), cfg); }, retryNote)
         .then(function (img) { finish(img, parseDesc(desc)); })
         .catch(function (e) {
-          status('✗ AI 生图失败（' + String(e.message).slice(0, 52) + '）已自动重试仍失败 → 先用内置画风，可稍后再点生成重试');
-          var st = $('crStatus'); st.style.color = 'var(--amber)';
+          var warn = '⚠️ AI 生图失败（' + String(e.message).slice(0, 46) + '），已自动重试仍失败 → 本局先用内置画风；稍后再点「生成」可重试 AI';
           var pc = parseDesc(desc);
           var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
           drawChibi(cv, pc);
           finish(cv.toDataURL('image/png'), pc);
+          status(warn);
+          var st = $('crStatus'); st.style.color = 'var(--amber)';
         });
     }
   } else {
