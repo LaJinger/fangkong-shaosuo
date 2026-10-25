@@ -1837,12 +1837,29 @@ function stylizePhoto(dataUrl, cb) {
 
 /* ---------- AI 调用 ---------- */
 function status(t) { $('crStatus').textContent = t; }
+var IP_TRAITS = [
+  [/福尔摩斯|夏洛克/g, 'a Victorian private detective wearing a deerstalker hat, smoking a curved pipe, in a tweed coat'],
+  [/柯南/g, 'a little boy detective with round glasses and a red bow tie'],
+  [/皮卡丘/g, 'a yellow electric mouse creature with pointy black-tipped ears and a lightning-shaped tail'],
+  [/孙悟空|悟空/g, 'a monkey warrior king holding a golden staff, wearing golden armor'],
+  [/超人/g, 'a caped superhero in a blue and red suit with a chest emblem'],
+  [/蝙蝠侠/g, 'a dark caped vigilante wearing a bat-eared cowl'],
+  [/马里奥/g, 'a mustached plumber in a red cap and blue overalls'],
+  [/鸣人/g, 'a ninja boy with spiky blond hair in an orange outfit'],
+  [/路飞/g, 'a pirate boy wearing a straw hat and a red vest']
+];
+function resolveIP(desc) {
+  var out = desc || '';
+  IP_TRAITS.forEach(function (m) { out = out.replace(m[0], m[1]); });
+  return out;
+}
 function buildPrompt(desc) {
-  return 'collectible game card character portrait: ' + (desc || 'a cute orange cat') +
+  return 'collectible game card character portrait: ' + resolveIP(desc) + ' (original character) '
     '. chibi radar sentry, wearing tactical headset with small antenna, confident friendly expression, ' +
     'flat vector style with clean bold shapes and simple shading, ' +
     'WARM cozy color palette, soft warm lighting, cheerful and inviting mood, warm cream and peach tones, ' +
     'absolutely NO green tint on the character, ' +
+    'the character MUST have distinctive costume, props and silhouette exactly as described, not a generic plain figure, ' +
     'the background MUST be one flat solid pure magenta color (#FF00FF) everywhere behind the character, ' +
     'full character visible with clear margin around it, no shadow on the background, ' +
     'centered composition, no text, no border, no watermark';
