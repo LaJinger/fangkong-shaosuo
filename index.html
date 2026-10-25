@@ -2321,7 +2321,10 @@ function doGenerate() {
       withRetry(function () { return aiT2I(buildPrompt(desc), cfg); }, retryNote)
         .then(function (img) { finish(img, parseDesc(desc)); })
         .catch(function (e) {
-          var warn = '⚠️ AI 生图失败（' + String(e.message).slice(0, 46) + '），已自动重试仍失败 → 本局先用内置画风；稍后再点「生成」可重试 AI';
+          var em = String(e.message || '');
+          var warn = /invalid token/i.test(em)
+            ? '⚠️ 生图 Key 已失效或额度耗尽（Invalid token）→ 点上方 ⚙️ 设置更新 Key 可恢复；本局先用内置画风'
+            : '⚠️ AI 生图失败（' + em.slice(0, 46) + '），已自动重试仍失败 → 本局先用内置画风；稍后再点「生成」可重试 AI';
           var pc = parseDesc(desc);
           var cv = document.createElement('canvas'); cv.width = 300; cv.height = 360;
           drawChibi(cv, pc);
